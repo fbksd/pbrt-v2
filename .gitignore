@@ -31,3 +31,6 @@ src/pbrt.vs*/.vs
 tmp/
 bin/
 lib/
+
+# QtCreator user files
+*.pro.user*

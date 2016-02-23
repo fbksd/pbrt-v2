@@ -66,7 +66,7 @@ Sampler *RandomSampler::GetSubSampler(int num, int count) {
     ComputeSubWindow(num, count, &x0, &x1, &y0, &y1);
     if (x0 == x1 || y0 == y1) return NULL;
     return new RandomSampler(x0, x1, y0, y1, nSamples,
-       shutterOpen, shutterClose);
+                             shutterOpen, shutterClose);
 }
 
 

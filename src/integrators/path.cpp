@@ -36,6 +36,8 @@
 #include "scene.h"
 #include "intersection.h"
 #include "paramset.h"
+#include "Benchmark/RenderingServer/RenderingServer.h"
+
 
 // PathIntegrator Method Definitions
 void PathIntegrator::RequestSamples(Sampler *sampler, Sample *sample,
@@ -59,6 +61,7 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
     Intersection localIsect;
     const Intersection *isectp = &isect;
     for (int bounces = 0; ; ++bounces) {
+
         // Possibly add emitted light at path vertex
         if (bounces == 0 || specularBounce)
             L += pathThroughput * isectp->Le(-ray.d);
@@ -67,13 +70,36 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         BSDF *bsdf = isectp->GetBSDF(ray, arena);
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
+
         Vector wo = -ray.d;
         if (bounces < SAMPLE_DEPTH)
+        {
+            sampleAdapter.set(WORLD_X, bounces, p.x);
+            sampleAdapter.set(WORLD_Y, bounces, p.y);
+            sampleAdapter.set(WORLD_Z, bounces, p.z);
+            sampleAdapter.set(NORMAL_X, bounces, n.x);
+            sampleAdapter.set(NORMAL_Y, bounces, n.y);
+            sampleAdapter.set(NORMAL_Z, bounces, n.z);
+            float rgb[3];
+            bsdf->getTextureColor().ToRGB(rgb);
+            sampleAdapter.set(TEXTURE_COLOR_R, bounces, rgb[0]);
+            sampleAdapter.set(TEXTURE_COLOR_G, bounces, rgb[1]);
+            sampleAdapter.set(TEXTURE_COLOR_B, bounces, rgb[2]);
+
+            if(bounces == 0)
+            {
+                float& lx = sample->twoD[lightSampleOffsets[bounces].posOffset][0];
+                float& ly = sample->twoD[lightSampleOffsets[bounces].posOffset][1];
+                lx = sampleAdapter.set(LIGHT_X, lx);
+                ly = sampleAdapter.set(LIGHT_Y, ly);
+            }
+
             L += pathThroughput *
                  UniformSampleOneLight(scene, renderer, arena, p, n, wo,
                      isectp->rayEpsilon, ray.time, bsdf, sample, rng,
                      lightNumOffset[bounces], &lightSampleOffsets[bounces],
                      &bsdfSampleOffsets[bounces]);
+        }
         else
             L += pathThroughput *
                  UniformSampleOneLight(scene, renderer, arena, p, n, wo,

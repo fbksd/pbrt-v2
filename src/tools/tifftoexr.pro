@@ -1,0 +1,1 @@
+SOURCES += tifftoexr.cpp

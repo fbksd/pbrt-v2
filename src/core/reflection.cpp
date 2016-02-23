@@ -653,4 +653,12 @@ Spectrum BSDF::rho(const Vector &wo, RNG &rng, BxDFType flags,
     return ret;
 }
 
+Spectrum BSDF::getTextureColor()
+{
+    Spectrum tex(0.f);
+    for(int i = 0; i < nBxDFs; i++)
+        tex += bxdfs[i]->getTextureColor();
+    return tex;
+}
+
 

@@ -37,8 +37,15 @@
 #include "parser.h"
 #include "parallel.h"
 
+#include <QCoreApplication>
+#include <QTimer>
+
 // main program
 int main(int argc, char *argv[]) {
+    QCoreApplication a(argc, argv);
+
+    setlocale(LC_NUMERIC,"C");
+
     Options options;
     vector<string> filenames;
     // Process command-line arguments
@@ -78,7 +85,13 @@ int main(int argc, char *argv[]) {
                 Error("Couldn't open scene file \"%s\"", filenames[i].c_str());
     }
     pbrtCleanup();
-    return 0;
+    qDebug("PBRT cleaned up.");
+
+    // QCoreApplication::quit() should be called after exec(), so I use this timer to do the trick.
+    QTimer timer;
+    QObject::connect(&timer, &QTimer::timeout, &a, &QCoreApplication::quit);
+    timer.start();
+    return a.exec();
 }
 
 

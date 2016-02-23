@@ -51,6 +51,7 @@ public:
     int GetMoreSamples(Sample *sample, RNG &rng);
     int RoundSize(int sz) const { return sz; }
     Sampler *GetSubSampler(int num, int count);
+
 private:
     // RandomSampler Private Data
     int xPos, yPos, nSamples;
