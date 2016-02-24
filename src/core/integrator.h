@@ -66,7 +66,7 @@ public:
     // SurfaceIntegrator Interface
     virtual Spectrum Li(const Scene *scene, const Renderer *renderer,
         const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena) const = 0;
+        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer = nullptr) const = 0;
 };
 
 

@@ -53,7 +53,7 @@ void PathIntegrator::RequestSamples(Sampler *sampler, Sample *sample,
 
 Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         const RayDifferential &r, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena) const {
+        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
     // Declare common path integration variables
     Spectrum pathThroughput = 1., L = 0.;
     RayDifferential ray(r);
@@ -74,24 +74,24 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         Vector wo = -ray.d;
         if (bounces < SAMPLE_DEPTH)
         {
-            sampleAdapter.set(WORLD_X, bounces, p.x);
-            sampleAdapter.set(WORLD_Y, bounces, p.y);
-            sampleAdapter.set(WORLD_Z, bounces, p.z);
-            sampleAdapter.set(NORMAL_X, bounces, n.x);
-            sampleAdapter.set(NORMAL_Y, bounces, n.y);
-            sampleAdapter.set(NORMAL_Z, bounces, n.z);
+            sampleBuffer->set(WORLD_X, bounces, p.x);
+            sampleBuffer->set(WORLD_Y, bounces, p.y);
+            sampleBuffer->set(WORLD_Z, bounces, p.z);
+            sampleBuffer->set(NORMAL_X, bounces, n.x);
+            sampleBuffer->set(NORMAL_Y, bounces, n.y);
+            sampleBuffer->set(NORMAL_Z, bounces, n.z);
             float rgb[3];
             bsdf->getTextureColor().ToRGB(rgb);
-            sampleAdapter.set(TEXTURE_COLOR_R, bounces, rgb[0]);
-            sampleAdapter.set(TEXTURE_COLOR_G, bounces, rgb[1]);
-            sampleAdapter.set(TEXTURE_COLOR_B, bounces, rgb[2]);
+            sampleBuffer->set(TEXTURE_COLOR_R, bounces, rgb[0]);
+            sampleBuffer->set(TEXTURE_COLOR_G, bounces, rgb[1]);
+            sampleBuffer->set(TEXTURE_COLOR_B, bounces, rgb[2]);
 
             if(bounces == 0)
             {
                 float& lx = sample->twoD[lightSampleOffsets[bounces].posOffset][0];
                 float& ly = sample->twoD[lightSampleOffsets[bounces].posOffset][1];
-                lx = sampleAdapter.set(LIGHT_X, lx);
-                ly = sampleAdapter.set(LIGHT_Y, ly);
+                lx = sampleBuffer->set(LIGHT_X, lx);
+                ly = sampleBuffer->set(LIGHT_Y, ly);
             }
 
             L += pathThroughput *

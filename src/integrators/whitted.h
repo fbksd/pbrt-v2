@@ -47,7 +47,7 @@ public:
     // WhittedIntegrator Public Methods
     Spectrum Li(const Scene *scene, const Renderer *renderer,
         const RayDifferential &ray, const Intersection &isect, const Sample *sample,
-        RNG &rng, MemoryArena &arena) const;
+        RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer = nullptr) const;
     WhittedIntegrator(int md) {
         maxDepth = md;
     }

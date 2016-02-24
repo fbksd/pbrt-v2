@@ -47,7 +47,6 @@
 
 
 // Global sample parameters variable. Declared as 'extern' in pbrt.h and filled through the system.
-SampleAdapter sampleAdapter;
 extern string g_samplerName;
 
 
@@ -381,8 +380,6 @@ ServerRenderer::ServerRenderer(Sampler *s, Camera *c,SurfaceIntegrator *si, Volu
     surfaceIntegrator = si;
     volumeIntegrator = vi;
     visualizeObjectIds = visIds;
-
-    inBuffer = outBuffer = NULL;
 }
 
 
@@ -420,7 +417,7 @@ void ServerRenderer::Render(const Scene *scene) {
 
 Spectrum ServerRenderer::Li(const Scene *scene,
         const RayDifferential &ray, const Sample *sample, RNG &rng,
-        MemoryArena &arena, Intersection *isect, Spectrum *T) const {
+        MemoryArena &arena, Intersection *isect, Spectrum *T, SampleBuffer* sampleBuffer) const {
     Assert(ray.time == sample->time);
     Assert(!ray.HasNaNs());
     // Allocate local variables for _isect_ and _T_ if needed
@@ -431,7 +428,7 @@ Spectrum ServerRenderer::Li(const Scene *scene,
     Spectrum Li = 0.f;
     if (scene->Intersect(ray, isect))
         Li = surfaceIntegrator->Li(scene, this, ray, *isect, sample,
-                                   rng, arena);
+                                   rng, arena, sampleBuffer);
     else {
         // Handle ray that doesn't intersect any geometry
         for (uint32_t i = 0; i < scene->lights.size(); ++i)
@@ -473,30 +470,10 @@ void ServerRenderer::getSceneInfo(SceneInfo *desc)
     desc->set<bool>("has_area_lights", hasAreaLights);
 }
 
-void ServerRenderer::setMaxSPP(int maxSPP)
-{
-    this->maxSPP = maxSPP;
-}
-
-void ServerRenderer::setSampleLayout(const SampleLayout& layout)
-{
-    sampleAdapter.setLayout(layout);
-
-    if(inBuffer)
-        delete[] inBuffer;
-    if(outBuffer)
-        delete[] outBuffer;
-
-    inBuffer = new float[maxSPP * w * h * layout.getInputSize()];
-    outBuffer = new float[maxSPP * w * h * layout.getOutputSize()];
-    server->setSampleBuffers(inBuffer, outBuffer);
-}
-
 void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int* resultSize)
 {
     int totalNumSamples = isSPP ? w * h * numSamples : numSamples;
     *resultSize = totalNumSamples;
-    sampleAdapter.setSamples(inBuffer, outBuffer, totalNumSamples);
 
     MixSampler mixSampler(sampler,
                           0,
@@ -508,14 +485,14 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int* resultSize
                           numSamples,
                           isSPP);
 
-    run(&mixSampler, mainSample);
+    SamplesPipe pipe;
+    run(&mixSampler, mainSample, pipe);
 }
 
 void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const CropWindow &crop, int *resultSize)
 {
     int totalNumSamples = isSPP ? w * h * numSamples : numSamples;
     *resultSize = totalNumSamples;
-    sampleAdapter.setSamples(inBuffer, outBuffer, totalNumSamples);
 
     MixSampler mixSampler(sampler,
                           crop.beginX,
@@ -527,14 +504,14 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const CropWindo
                           numSamples,
                           isSPP);
 
-    run(&mixSampler, mainSample);
+    SamplesPipe pipe;
+    run(&mixSampler, mainSample, pipe);
 }
 
 void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const float *pdf, int *resultSize)
 {
     int totalNumSamples = isSPP ? w * h * numSamples : numSamples;
     *resultSize = totalNumSamples;
-    sampleAdapter.setSamples(inBuffer, outBuffer, totalNumSamples);
 
     AdaptiveMixSampler mixSampler(sampler,
                                   0,
@@ -547,10 +524,11 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const float *pd
                                   isSPP,
                                   pdf);
 
-    run(&mixSampler, mainSample);
+    SamplesPipe pipe;
+    run(&mixSampler, mainSample, pipe);
 }
 
-void ServerRenderer::run(Sampler* sampler, Sample* origSample)
+void ServerRenderer::run(Sampler* sampler, Sample* origSample, SamplesPipe& pipe)
 {
     // Declare local variables used for rendering loop
     MemoryArena arena;
@@ -569,12 +547,14 @@ void ServerRenderer::run(Sampler* sampler, Sample* origSample)
     while ((sampleCount = sampler->GetMoreSamples(samples, rng)) > 0) {
         // Generate camera rays and compute radiance along rays
         for (int i = 0; i < sampleCount; ++i) {
+            SampleBuffer sampleBuffer = pipe.getBuffer();
+
             // Replace sample positions if they are provided as INPUT
-            samples[i].imageX = sampleAdapter.set(IMAGE_X, samples[i].imageX);
-            samples[i].imageY = sampleAdapter.set(IMAGE_Y, samples[i].imageY);
-            samples[i].lensU = sampleAdapter.set(LENS_U, samples[i].lensU);
-            samples[i].lensV = sampleAdapter.set(LENS_V, samples[i].lensV);
-            samples[i].time = sampleAdapter.set(TIME, samples[i].time);
+            samples[i].imageX = sampleBuffer.set(IMAGE_X, samples[i].imageX);
+            samples[i].imageY = sampleBuffer.set(IMAGE_Y, samples[i].imageY);
+            samples[i].lensU = sampleBuffer.set(LENS_U, samples[i].lensU);
+            samples[i].lensV = sampleBuffer.set(LENS_V, samples[i].lensV);
+            samples[i].time = sampleBuffer.set(TIME, samples[i].time);
 
             // Find camera ray for _sample[i]_
             PBRT_STARTED_GENERATING_CAMERA_RAY(&samples[i]);
@@ -599,7 +579,7 @@ void ServerRenderer::run(Sampler* sampler, Sample* origSample)
             }
             else {
             if (rayWeight > 0.f)
-                Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i]);
+                Ls[i] = rayWeight * Li(scene, rays[i], &samples[i], rng, arena, &isects[i], &Ts[i], &sampleBuffer);
             else {
                 Ls[i] = 0.f;
                 Ts[i] = 1.f;
@@ -625,10 +605,11 @@ void ServerRenderer::run(Sampler* sampler, Sample* origSample)
 
             // Save features
             float rgb[3]; Ls[i].ToRGB(rgb);
-            sampleAdapter.set(COLOR_R, rgb[0]);
-            sampleAdapter.set(COLOR_G, rgb[1]);
-            sampleAdapter.set(COLOR_B, rgb[2]);
-            sampleAdapter.next();
+            sampleBuffer.set(COLOR_R, rgb[0]);
+            sampleBuffer.set(COLOR_G, rgb[1]);
+            sampleBuffer.set(COLOR_B, rgb[2]);
+
+            pipe << sampleBuffer;
 
             PBRT_FINISHED_CAMERA_RAY_INTEGRATION(&rays[i], &samples[i], &Ls[i]);
         }

@@ -100,7 +100,7 @@ struct PoissonCheck {
 // SurfacePointsRenderer Method Definitions
 Spectrum SurfacePointsRenderer::Li(const Scene *scene,
     const RayDifferential &ray, const Sample *sample, RNG &rng, MemoryArena &arena,
-    Intersection *isect, Spectrum *T) const {
+    Intersection *isect, Spectrum *T, SampleBuffer* sampleBuffer) const {
     return 0.f;
 }
 

@@ -53,7 +53,7 @@ public:
     void Render(const Scene *scene);
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,
-        Spectrum *T) const;
+        Spectrum *T, SampleBuffer* sampleBuffer = nullptr) const;
     Spectrum Transmittance(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena) const;
 private:

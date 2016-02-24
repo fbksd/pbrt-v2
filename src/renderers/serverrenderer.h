@@ -46,6 +46,7 @@ class SceneInfo;
 class SampleLayout;
 class SampleQuerySplitBuffers;
 class CropWindow;
+class SamplesPipe;
 
 
 class ServerRenderer : public Renderer {
@@ -58,23 +59,18 @@ public:
 
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
                 const Sample *sample, RNG &rng, MemoryArena &arena,
-                Intersection *isect = NULL, Spectrum *T = NULL) const;
+                Intersection *isect = NULL, Spectrum *T = NULL, SampleBuffer* sampleBuffer = nullptr) const;
 
     Spectrum Transmittance(const Scene *scene, const RayDifferential &ray,
                            const Sample *sample, RNG &rng, MemoryArena &arena) const;
 
 
     void getSceneInfo(SceneInfo *scene);
-
-    void setMaxSPP(int maxSPP);
-
-    void setSampleLayout(const SampleLayout& layout);
-
     void evaluateSamples(bool isSPP, int numSamples, int* resultSize);
     void evaluateSamples(bool isSPP, int numSamples, const CropWindow& crop, int* resultSize);
     void evaluateSamples(bool isSPP, int numSamples, const float* pdf, int* resultSize);
 
-    void run(Sampler* sampler, Sample* origSample);
+    void run(Sampler* sampler, Sample* origSample, SamplesPipe& pipe);
 
 private:
     bool visualizeObjectIds;
@@ -86,8 +82,6 @@ private:
     const Scene* scene;
 
     PBRTServer* server;
-    float* inBuffer;
-    float* outBuffer;
     int w, h, maxSPP;
 };
 

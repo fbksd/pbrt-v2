@@ -35,6 +35,7 @@
 #include "integrators/directlighting.h"
 #include "intersection.h"
 #include "paramset.h"
+#include "Benchmark/RenderingServer/RenderingServer.h"
 
 // DirectLightingIntegrator Method Definitions
 DirectLightingIntegrator::DirectLightingIntegrator(LightStrategy st, int md) {
@@ -80,7 +81,7 @@ void DirectLightingIntegrator::RequestSamples(Sampler *sampler,
 
 Spectrum DirectLightingIntegrator::Li(const Scene *scene,
         const Renderer *renderer, const RayDifferential &ray,
-        const Intersection &isect, const Sample *sample, RNG &rng, MemoryArena &arena) const {
+        const Intersection &isect, const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
     Spectrum L(0.f);
     // Evaluate BSDF at hit point
     BSDF *bsdf = isect.GetBSDF(ray, arena);
@@ -89,6 +90,23 @@ Spectrum DirectLightingIntegrator::Li(const Scene *scene,
     const Normal &n = bsdf->dgShading.nn;
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
+
+    if(ray.depth == 0 && sampleBuffer)
+    {
+        sampleBuffer->set(WORLD_X, p.x);
+        sampleBuffer->set(WORLD_Y, p.y);
+        sampleBuffer->set(WORLD_Z, p.z);
+        sampleBuffer->set(NORMAL_X, n.x);
+        sampleBuffer->set(NORMAL_Y, n.y);
+        sampleBuffer->set(NORMAL_Z, n.z);
+
+        Spectrum tex = bsdf->getTextureColor();
+        float rgb[3];
+        tex.ToRGB(rgb);
+        sampleBuffer->set(TEXTURE_COLOR_R, rgb[0]);
+        sampleBuffer->set(TEXTURE_COLOR_G, rgb[1]);
+        sampleBuffer->set(TEXTURE_COLOR_B, rgb[2]);
+    }
 
     // Compute direct lighting for _DirectLightingIntegrator_ integrator
     if (scene->lights.size() > 0) {

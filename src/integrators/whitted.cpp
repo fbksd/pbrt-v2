@@ -35,12 +35,13 @@
 #include "integrators/whitted.h"
 #include "intersection.h"
 #include "paramset.h"
+#include "Benchmark/RenderingServer/RenderingServer.h"
 
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const Scene *scene,
         const Renderer *renderer, const RayDifferential &ray,
         const Intersection &isect, const Sample *sample, RNG &rng,
-        MemoryArena &arena) const {
+        MemoryArena &arena, SampleBuffer* sampleBuffer) const {
     Spectrum L(0.);
     // Compute emitted and reflected light at ray intersection point
 
@@ -54,6 +55,23 @@ Spectrum WhittedIntegrator::Li(const Scene *scene,
 
     // Compute emitted light if ray hit an area light source
     L += isect.Le(wo);
+
+    if(ray.depth == 0 && sampleBuffer)
+    {
+        sampleBuffer->set(WORLD_X, p.x);
+        sampleBuffer->set(WORLD_Y, p.y);
+        sampleBuffer->set(WORLD_Z, p.z);
+        sampleBuffer->set(NORMAL_X, n.x);
+        sampleBuffer->set(NORMAL_Y, n.y);
+        sampleBuffer->set(NORMAL_Z, n.z);
+
+        Spectrum tex = bsdf->getTextureColor();
+        float rgb[3];
+        tex.ToRGB(rgb);
+        sampleBuffer->set(TEXTURE_COLOR_R, rgb[0]);
+        sampleBuffer->set(TEXTURE_COLOR_G, rgb[1]);
+        sampleBuffer->set(TEXTURE_COLOR_B, rgb[2]);
+    }
 
     // Add contribution of each light source
     for (uint32_t i = 0; i < scene->lights.size(); ++i) {

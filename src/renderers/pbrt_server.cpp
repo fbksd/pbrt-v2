@@ -12,8 +12,6 @@ PBRTServer::PBRTServer(ServerRenderer* renderer):
 
     server = new RenderingServer;
     QObject::connect(server, &RenderingServer::getSceneInfo, this, &PBRTServer::getSceneInfo);
-    QObject::connect(server, &RenderingServer::setMaxSPP, this, &PBRTServer::setMaxSPP);
-    QObject::connect(server, &RenderingServer::setSampleLayout, this, &PBRTServer::setSampleLayout);
     QObject::connect(server, &RenderingServer::evaluateSamples, this, &PBRTServer::evaluateSamples);
     QObject::connect(server, &RenderingServer::evaluateSamplesCrop, this, &PBRTServer::evaluateSamplesCrop);
     QObject::connect(server, &RenderingServer::evaluateSamplesPDF, this, &PBRTServer::evaluateSamplesPDF);
@@ -26,24 +24,9 @@ PBRTServer::~PBRTServer()
     delete server;
 }
 
-void PBRTServer::setSampleBuffers(float *input, float *output)
-{
-    server->setSampleBuffers(input, output);
-}
-
 void PBRTServer::getSceneInfo(SceneInfo *scene)
 {
     renderer->getSceneInfo(scene);
-}
-
-void PBRTServer::setMaxSPP(int maxSPP)
-{
-    renderer->setMaxSPP(maxSPP);
-}
-
-void PBRTServer::setSampleLayout(const SampleLayout& layout)
-{
-    renderer->setSampleLayout(layout);
 }
 
 void PBRTServer::evaluateSamples(bool isSPP, int numSamples, int* resultSize)

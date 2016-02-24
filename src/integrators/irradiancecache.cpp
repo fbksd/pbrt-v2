@@ -196,7 +196,7 @@ void IrradiancePrimeTask::Run() {
 
 Spectrum IrradianceCacheIntegrator::Li(const Scene *scene,
         const Renderer *renderer, const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena) const {
+        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
     Spectrum L(0.);
     // Evaluate BSDF at hit point
     BSDF *bsdf = isect.GetBSDF(ray, arena);

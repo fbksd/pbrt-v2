@@ -70,7 +70,7 @@ void DiffusePRTIntegrator::RequestSamples(Sampler *sampler, Sample *sample, cons
 
 Spectrum DiffusePRTIntegrator::Li(const Scene *scene, const Renderer *,
             const RayDifferential &ray, const Intersection &isect,
-            const Sample *sample, RNG &rng, MemoryArena &arena) const {
+            const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
     Spectrum L = 0.f;
     Vector wo = -ray.d;
     // Compute emitted light if ray hit an area light source

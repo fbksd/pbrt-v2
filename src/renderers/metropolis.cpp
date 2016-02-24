@@ -784,7 +784,7 @@ void MLTTask::Run() {
 
 Spectrum MetropolisRenderer::Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,
-        Spectrum *T) const {
+        Spectrum *T, SampleBuffer* sampleBuffer) const {
     Intersection localIsect;
     if (!isect) isect = &localIsect;
     Spectrum Lo = 0.f;

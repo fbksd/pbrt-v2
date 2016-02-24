@@ -322,11 +322,4 @@ inline bool Quadratic(float A, float B, float C, float *t0, float *t1) {
     return true;
 }
 
-
-
-// Global sample parameters variable. Defined in serverrenderer.cpp and filled through the system.
-class SampleAdapter;
-extern SampleAdapter sampleAdapter;
-
-
 #endif // PBRT_CORE_PBRT_H

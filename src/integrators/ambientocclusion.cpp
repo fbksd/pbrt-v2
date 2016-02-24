@@ -41,7 +41,7 @@
 // AmbientOcclusionIntegrator Method Definitions
 Spectrum AmbientOcclusionIntegrator::Li(const Scene *scene, const Renderer *renderer,
         const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena) const {
+        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
 
     BSDF *bsdf = isect.GetBSDF(ray, arena);
     const Point &p = bsdf->dgShading.p;
