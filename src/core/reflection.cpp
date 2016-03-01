@@ -657,7 +657,8 @@ Spectrum BSDF::getTextureColor()
 {
     Spectrum tex(0.f);
     for(int i = 0; i < nBxDFs; i++)
-        tex += bxdfs[i]->getTextureColor();
+        if((bxdfs[i]->type & BSDF_DIFFUSE) != 0)
+            tex += bxdfs[i]->getTextureColor();
     return tex;
 }
 
