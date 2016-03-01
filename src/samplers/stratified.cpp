@@ -96,6 +96,17 @@ int StratifiedSampler::GetMoreSamples(Sample *samples, RNG &rng) {
     for (int i = 0; i < nSamples; ++i) {
         samples[i].imageX = imageSamples[2*i];
         samples[i].imageY = imageSamples[2*i+1];
+
+        // Check limits to a void sample spilling in another pixel
+        if(((int)samples[i].imageX) < xPos)
+            samples[i].imageX = xPos + 0.0001f;
+        if(((int)samples[i].imageX) > xPos)
+            samples[i].imageX = (xPos + 1) - 0.0001f;
+        if(((int)samples[i].imageY) < yPos)
+            samples[i].imageY = yPos + 0.0001f;
+        if(((int)samples[i].imageY) > yPos)
+            samples[i].imageY = (yPos + 1) - 0.0001f;
+
         samples[i].lensU = lensSamples[2*i];
         samples[i].lensV = lensSamples[2*i+1];
         samples[i].time = Lerp(timeSamples[i], shutterOpen, shutterClose);

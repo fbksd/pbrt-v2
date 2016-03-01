@@ -95,6 +95,17 @@ int RandomSampler::GetMoreSamples(Sample *sample, RNG &rng) {
     // Return next \mono{RandomSampler} sample point
     sample->imageX = imageSamples[2*samplePos];
     sample->imageY = imageSamples[2*samplePos+1];
+
+    // Check limits to a void sample spilling in another pixel
+    if(((int)sample->imageX) < xPos)
+        sample->imageX = xPos + 0.0001f;
+    if(((int)sample->imageX) > xPos)
+        sample->imageX = (xPos + 1) - 0.0001f;
+    if(((int)sample->imageY) < yPos)
+        sample->imageY = yPos + 0.0001f;
+    if(((int)sample->imageY) > yPos)
+        sample->imageY = (yPos + 1) - 0.0001f;
+
     sample->lensU = lensSamples[2*samplePos];
     sample->lensV = lensSamples[2*samplePos+1];
     sample->time = Lerp(timeSamples[samplePos], shutterOpen, shutterClose);
