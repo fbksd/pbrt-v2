@@ -451,6 +451,8 @@ void ServerRenderer::getSceneInfo(SceneInfo *desc)
 {
     desc->set<int>("width", camera->film->xResolution);
     desc->set<int>("height", camera->film->yResolution);
+    desc->set<int>("max_spp", sampler->samplesPerPixel);
+    desc->set<int>("max_samples", sampler->samplesPerPixel * camera->film->xResolution * camera->film->yResolution);
 
     // NOTE: In PBRT, shutterOpen and shutterClose defaults are 0 and 1, respectively,
     // which makes them not good to decide if a scene as motion blur.
