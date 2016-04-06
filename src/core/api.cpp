@@ -1217,6 +1217,30 @@ Scene *RenderOptions::MakeScene() {
 Renderer *RenderOptions::MakeRenderer() const {
     Renderer *renderer = NULL;
     Camera *camera = MakeCamera();
+
+    // Always use server renderer for benchmark
+    {
+        bool visIds = RendererParams.FindOneBool("visualizeobjectids", false);
+        RendererParams.ReportUnused();
+        Sampler *sampler = MakeSampler(SamplerName, SamplerParams, camera->film, camera);
+        if (!sampler) Severe("Unable to create sampler.");
+        // Create surface and volume integrators
+        SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(SurfIntegratorName,
+            SurfIntegratorParams);
+        if (!surfaceIntegrator) Severe("Unable to create surface integrator.");
+        VolumeIntegrator *volumeIntegrator = MakeVolumeIntegrator(VolIntegratorName,
+            VolIntegratorParams);
+        if (!volumeIntegrator) Severe("Unable to create volume integrator.");
+        renderer = new ServerRenderer(sampler, camera, surfaceIntegrator,
+                                       volumeIntegrator, visIds);
+        // Warn if no light sources are defined
+        if (lights.size() == 0)
+            Warning("No light sources defined in scene; "
+                "possibly rendering a black image.");
+
+        return renderer;
+    }
+
     if (RendererName == "metropolis") {
         renderer = CreateMetropolisRenderer(RendererParams, camera);
         RendererParams.ReportUnused();
@@ -1249,26 +1273,6 @@ Renderer *RenderOptions::MakeRenderer() const {
         Point pCamera = camera->CameraToWorld(camera->shutterOpen, Point(0, 0, 0));
         renderer = CreateSurfacePointsRenderer(RendererParams, pCamera, camera->shutterOpen);
         RendererParams.ReportUnused();
-    }
-    else if(RendererName == "server")
-    {
-        bool visIds = RendererParams.FindOneBool("visualizeobjectids", false);
-        RendererParams.ReportUnused();
-        Sampler *sampler = MakeSampler(SamplerName, SamplerParams, camera->film, camera);
-        if (!sampler) Severe("Unable to create sampler.");
-        // Create surface and volume integrators
-        SurfaceIntegrator *surfaceIntegrator = MakeSurfaceIntegrator(SurfIntegratorName,
-            SurfIntegratorParams);
-        if (!surfaceIntegrator) Severe("Unable to create surface integrator.");
-        VolumeIntegrator *volumeIntegrator = MakeVolumeIntegrator(VolIntegratorName,
-            VolIntegratorParams);
-        if (!volumeIntegrator) Severe("Unable to create volume integrator.");
-        renderer = new ServerRenderer(sampler, camera, surfaceIntegrator,
-                                       volumeIntegrator, visIds);
-        // Warn if no light sources are defined
-        if (lights.size() == 0)
-            Warning("No light sources defined in scene; "
-                "possibly rendering a black image.");
     }
     else {
         if (RendererName != "sampler")
