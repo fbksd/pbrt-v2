@@ -6,6 +6,10 @@ add_definitions(-DPBRT_HAS_OPENEXR -DPBRT_PROBES_NONE)
 # turn on c++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+# Benchmark lib
+include_directories(${PROJECT_SOURCE_DIR}/../../Benchmark/include)
+link_directories(${PROJECT_BINARY_DIR}/../../Benchmark)
+
 # Qt
 set(CMAKE_AUTOMOC ON)
 find_package(Qt5Core)
@@ -14,7 +18,6 @@ find_package(Qt5Network)
 # OpenEXR
 include_directories(/usr/include/OpenEXR)
 set(OPENEXR_LIBRARIES IlmImf Half)
-
 
 # Threads
 set(CMAKE_THREAD_PREFER_PTHREAD)
@@ -53,7 +56,7 @@ file(GLOB CORE_FILES
     "src/volumes/*.cpp"
 )
 add_library(core ${CORE_FILES})
-target_link_libraries(core RenderingServer ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
+target_link_libraries(core RenderingServer BenchmarkCore Qt5::Network Qt5::Core ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
 
 # pbrt app
 file(GLOB PBRT_FILES
