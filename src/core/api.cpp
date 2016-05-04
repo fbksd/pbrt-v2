@@ -123,6 +123,7 @@
 #include "textures/uv.h"
 #include "textures/windy.h"
 #include "textures/wrinkled.h"
+#include "textures/divide.h"
 #include "volumes/exponential.h"
 #include "volumes/homogeneous.h"
 #include "volumes/volumegrid.h"
@@ -444,6 +445,8 @@ Reference<Texture<float> > MakeFloatTexture(const string &name,
         tex = CreateMarbleFloatTexture(tex2world, tp);
     else if (name == "windy")
         tex = CreateWindyFloatTexture(tex2world, tp);
+    else if (name == "divide")
+        tex = CreateDivideFloatTexture(tex2world, tp);
     else
         Warning("Float texture \"%s\" unknown.", name.c_str());
     tp.ReportUnused();
@@ -478,6 +481,8 @@ Reference<Texture<Spectrum> > MakeSpectrumTexture(const string &name,
         tex = CreateMarbleSpectrumTexture(tex2world, tp);
     else if (name == "windy")
         tex = CreateWindySpectrumTexture(tex2world, tp);
+    else if (name == "divide")
+        tex = CreateDivideSpectrumTexture(tex2world, tp);
     else
         Warning("Spectrum texture \"%s\" unknown.", name.c_str());
     tp.ReportUnused();
