@@ -34,3 +34,4 @@ lib/
 
 # QtCreator user files
 *.pro.user*
+*.txt.user*

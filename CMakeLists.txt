@@ -56,7 +56,7 @@ file(GLOB CORE_FILES
     "src/volumes/*.cpp"
 )
 add_library(core ${CORE_FILES})
-target_link_libraries(core RenderingServer BenchmarkCore Qt5::Network Qt5::Core ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
+target_link_libraries(core RenderingServer BenchmarkCore Qt5::Network Qt5::Core -lrt ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
 
 # pbrt app
 file(GLOB PBRT_FILES
