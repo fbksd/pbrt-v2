@@ -67,8 +67,8 @@ public:
 
     void getSceneInfo(SceneInfo *scene);
     void evaluateSamples(bool isSPP, int numSamples, int* resultSize);
-    void evaluateSamples(bool isSPP, int numSamples, const CropWindow& crop, int* resultSize);
-    void evaluateSamples(bool isSPP, int numSamples, const float* pdf, int* resultSize);
+    void evaluateSamplesCrop(bool isSPP, int numSamples, const CropWindow& crop, int* resultSize);
+    void evaluateSamplesPDF(bool isSPP, int numSamples, const float* pdf, int* resultSize);
 
     void run(Sampler* sampler, Sample* origSample, SamplesPipe& pipe);
 
@@ -80,8 +80,6 @@ private:
     SurfaceIntegrator *surfaceIntegrator;
     VolumeIntegrator *volumeIntegrator;
     const Scene* scene;
-
-    PBRTServer* server;
     int w, h, maxSPP;
 };
 

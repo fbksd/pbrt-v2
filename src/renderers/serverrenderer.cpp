@@ -42,7 +42,6 @@
 #include "camera.h"
 #include "intersection.h"
 
-#include "pbrt_server.h"
 #include <QEventLoop>
 
 
@@ -406,12 +405,28 @@ void ServerRenderer::Render(const Scene *scene) {
     mainSample = new Sample(sampler, surfaceIntegrator, volumeIntegrator, scene);
 
     QEventLoop eventLoop;
-    server = new PBRTServer(this);
-    QObject::connect(server, &PBRTServer::finishRender, &eventLoop, &QEventLoop::quit);
+    std::unique_ptr<RenderingServer> server(new RenderingServer);
+    QObject::connect(server.get(), &RenderingServer::getSceneInfo,
+        [this](SceneInfo* scene)
+        { this->getSceneInfo(scene); }
+    );
+    QObject::connect(server.get(), &RenderingServer::evaluateSamples,
+        [this](bool isSPP, int numSamples, int* resultSize)
+        { this->evaluateSamples(isSPP, numSamples, resultSize); }
+    );
+    QObject::connect(server.get(), &RenderingServer::evaluateSamplesCrop,
+        [this](bool isSPP, int numSamples, const CropWindow& crop, int* resultSize)
+        { this->evaluateSamplesCrop(isSPP, numSamples, crop, resultSize); }
+    );
+    QObject::connect(server.get(), &RenderingServer::evaluateSamplesPDF,
+        [this](bool isSPP, int numSamples, const float* pdf, int* resultSize)
+        { this->evaluateSamplesPDF(isSPP, numSamples, pdf, resultSize); }
+    );
+    QObject::connect(server.get(), &RenderingServer::finishRender, &eventLoop, &QEventLoop::quit);
+    server->startServer(2227);
     eventLoop.exec();
 
     PBRT_FINISHED_RENDERING();
-    delete server;
 }
 
 
@@ -491,7 +506,7 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int* resultSize
     run(&mixSampler, mainSample, pipe);
 }
 
-void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const CropWindow &crop, int *resultSize)
+void ServerRenderer::evaluateSamplesCrop(bool isSPP, int numSamples, const CropWindow &crop, int *resultSize)
 {
     int totalNumSamples = isSPP ? w * h * numSamples : numSamples;
     *resultSize = totalNumSamples;
@@ -510,7 +525,7 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const CropWindo
     run(&mixSampler, mainSample, pipe);
 }
 
-void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, const float *pdf, int *resultSize)
+void ServerRenderer::evaluateSamplesPDF(bool isSPP, int numSamples, const float *pdf, int *resultSize)
 {
     int totalNumSamples = isSPP ? w * h * numSamples : numSamples;
     *resultSize = totalNumSamples;
