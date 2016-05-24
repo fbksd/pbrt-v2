@@ -56,7 +56,8 @@ public:
     virtual Sampler *GetSubSampler(int num, int count) = 0;
     virtual int RoundSize(int size) const = 0;
 
-    virtual void reset(bool isSpp, int numSamples){}
+    virtual int getNumSamples() const {return 0;}
+    virtual int getSubSamplerSize(int num, int count) const;
 
     // Sampler Public Data
     const int xPixelStart, xPixelEnd, yPixelStart, yPixelEnd;
