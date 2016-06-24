@@ -206,6 +206,7 @@ void ServerRendererTask::Run() {
             sampleBuffer.set(COLOR_R, rgb[0]);
             sampleBuffer.set(COLOR_G, rgb[1]);
             sampleBuffer.set(COLOR_B, rgb[2]);
+            sampleBuffer.set(DEPTH, rays[i].maxt);
             pipe << sampleBuffer;
 
             PBRT_FINISHED_CAMERA_RAY_INTEGRATION(&rays[i], &samples[i], &Ls[i]);
@@ -362,22 +363,14 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int *resultSize
     std::unique_ptr<RandomSampler> sppSampler;
     std::unique_ptr<SparseSampler> sparseSampler;
     if(spp)
-        sppSampler.reset(new RandomSampler(m_sampler->xPixelStart,
-                                           m_sampler->xPixelEnd,
-                                           m_sampler->yPixelStart,
-                                           m_sampler->yPixelEnd,
-                                           spp,
+        sppSampler.reset(new RandomSampler(0, m_width, 0, m_height, spp,
                                            m_sampler->shutterOpen,
                                            m_sampler->shutterClose));
     else
         nSppTasks = 0;
 
     if(rest)
-        sparseSampler.reset(new SparseSampler(m_sampler->xPixelStart,
-                                              m_sampler->xPixelEnd,
-                                              m_sampler->yPixelStart,
-                                              m_sampler->yPixelEnd,
-                                              rest,
+        sparseSampler.reset(new SparseSampler(0, m_width, 0, m_height, rest,
                                               m_sampler->shutterOpen,
                                               m_sampler->shutterClose));
     else
