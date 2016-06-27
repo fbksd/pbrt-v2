@@ -86,19 +86,27 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
             sampleBuffer->set(TEXTURE_COLOR_G, bounces, rgb[1]);
             sampleBuffer->set(TEXTURE_COLOR_B, bounces, rgb[2]);
 
+            Spectrum Ltmp;
+            Ltmp = pathThroughput *
+                 UniformSampleOneLight(scene, renderer, arena, p, n, wo,
+                     isectp->rayEpsilon, ray.time, bsdf, sample, rng,
+                     lightNumOffset[bounces], &lightSampleOffsets[bounces],
+                     &bsdfSampleOffsets[bounces]);
+            L += Ltmp;
+
             if(bounces == 0)
             {
+                float rgb[] = {0.f, 0.f, 0.f};
+                Ltmp.ToRGB(rgb);
+                sampleBuffer->set(DIRECT_LIGHT_R, rgb[0]);
+                sampleBuffer->set(DIRECT_LIGHT_G, rgb[1]);
+                sampleBuffer->set(DIRECT_LIGHT_B, rgb[2]);
+
                 float& lx = sample->twoD[lightSampleOffsets[bounces].posOffset][0];
                 float& ly = sample->twoD[lightSampleOffsets[bounces].posOffset][1];
                 lx = sampleBuffer->set(LIGHT_X, lx);
                 ly = sampleBuffer->set(LIGHT_Y, ly);
             }
-
-            L += pathThroughput *
-                 UniformSampleOneLight(scene, renderer, arena, p, n, wo,
-                     isectp->rayEpsilon, ray.time, bsdf, sample, rng,
-                     lightNumOffset[bounces], &lightSampleOffsets[bounces],
-                     &bsdfSampleOffsets[bounces]);
         }
         else
             L += pathThroughput *

@@ -109,21 +109,33 @@ Spectrum DirectLightingIntegrator::Li(const Scene *scene,
     }
 
     // Compute direct lighting for _DirectLightingIntegrator_ integrator
+    Spectrum directL;
     if (scene->lights.size() > 0) {
         // Apply direct lighting strategy
         switch (strategy) {
             case SAMPLE_ALL_UNIFORM:
-                L += UniformSampleAllLights(scene, renderer, arena, p, n, wo,
+                directL = UniformSampleAllLights(scene, renderer, arena, p, n, wo,
                     isect.rayEpsilon, ray.time, bsdf, sample, rng,
                     lightSampleOffsets, bsdfSampleOffsets);
                 break;
             case SAMPLE_ONE_UNIFORM:
-                L += UniformSampleOneLight(scene, renderer, arena, p, n, wo,
+                directL = UniformSampleOneLight(scene, renderer, arena, p, n, wo,
                     isect.rayEpsilon, ray.time, bsdf, sample, rng,
                     lightNumOffset, lightSampleOffsets, bsdfSampleOffsets);
                 break;
         }
     }
+    L += directL;
+
+    if(ray.depth == 0 && sampleBuffer)
+    {
+        float rgb[] = {0.f, 0.f, 0.f};
+        directL.ToRGB(rgb);
+        sampleBuffer->set(DIRECT_LIGHT_R, rgb[0]);
+        sampleBuffer->set(DIRECT_LIGHT_G, rgb[1]);
+        sampleBuffer->set(DIRECT_LIGHT_B, rgb[2]);
+    }
+
     if (ray.depth + 1 < maxDepth) {
         Vector wi;
         // Trace rays for specular reflection and refraction
