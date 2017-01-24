@@ -96,9 +96,10 @@ Spectrum DirectLightingIntegrator::Li(const Scene *scene,
         sampleBuffer->set(WORLD_X, p.x);
         sampleBuffer->set(WORLD_Y, p.y);
         sampleBuffer->set(WORLD_Z, p.z);
-        sampleBuffer->set(NORMAL_X, n.x);
-        sampleBuffer->set(NORMAL_Y, n.y);
-        sampleBuffer->set(NORMAL_Z, n.z);
+        Normal nn = Faceforward(n, wo);
+        sampleBuffer->set(NORMAL_X, nn.x);
+        sampleBuffer->set(NORMAL_Y, nn.y);
+        sampleBuffer->set(NORMAL_Z, nn.z);
 
         Spectrum tex = bsdf->getTextureColor();
         float rgb[3];

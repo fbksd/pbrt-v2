@@ -78,9 +78,10 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
             sampleBuffer->set(WORLD_X, bounces, p.x);
             sampleBuffer->set(WORLD_Y, bounces, p.y);
             sampleBuffer->set(WORLD_Z, bounces, p.z);
-            sampleBuffer->set(NORMAL_X, bounces, n.x);
-            sampleBuffer->set(NORMAL_Y, bounces, n.y);
-            sampleBuffer->set(NORMAL_Z, bounces, n.z);
+            Normal nn = Faceforward(n, wo);
+            sampleBuffer->set(NORMAL_X, bounces, nn.x);
+            sampleBuffer->set(NORMAL_Y, bounces, nn.y);
+            sampleBuffer->set(NORMAL_Z, bounces, nn.z);
             float rgb[3];
             bsdf->getTextureColor().ToRGB(rgb);
             sampleBuffer->set(TEXTURE_COLOR_R, bounces, rgb[0]);
