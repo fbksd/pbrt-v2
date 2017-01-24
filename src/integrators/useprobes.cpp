@@ -124,9 +124,10 @@ Spectrum UseRadianceProbes::Li(const Scene *scene, const Renderer *renderer,
     const Point &p = bsdf->dgShading.p;
     const Normal &n = bsdf->dgShading.nn;
     // Compute reflection for radiance probes integrator
+    Spectrum directL;
     if (!includeDirectInProbes)
         L += UniformSampleAllLights(scene, renderer, arena, p, n,
-                wo, isect.rayEpsilon, ray.time, bsdf, sample, rng,
+                wo, isect.rayEpsilon, ray.time, bsdf, sample, rng, directL,
                 lightSampleOffsets, bsdfSampleOffsets);
 
     // Compute reflected lighting using radiance probes

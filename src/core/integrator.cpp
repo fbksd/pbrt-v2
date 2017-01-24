@@ -48,9 +48,10 @@ Spectrum UniformSampleAllLights(const Scene *scene,
         const Renderer *renderer, MemoryArena &arena, const Point &p,
         const Normal &n, const Vector &wo, float rayEpsilon,
         float time, BSDF *bsdf, const Sample *sample, RNG &rng,
-        const LightSampleOffsets *lightSampleOffsets,
+        Spectrum& directLSum, const LightSampleOffsets *lightSampleOffsets,
         const BSDFSampleOffsets *bsdfSampleOffsets) {
     Spectrum L(0.);
+    Spectrum directL;
     for (uint32_t i = 0; i < scene->lights.size(); ++i) {
         Light *light = scene->lights[i];
         int nSamples = lightSampleOffsets ?
@@ -71,9 +72,11 @@ Spectrum UniformSampleAllLights(const Scene *scene,
             }
             Ld += EstimateDirect(scene, renderer, arena, light, p, n, wo,
                 rayEpsilon, time, bsdf, rng, lightSample, bsdfSample,
-                BxDFType(BSDF_ALL & ~BSDF_SPECULAR));
+                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL);
+            directLSum += directL;
         }
         L += Ld / nSamples;
+        directLSum = directLSum / nSamples;
     }
     return L;
 }
@@ -82,7 +85,7 @@ Spectrum UniformSampleAllLights(const Scene *scene,
 Spectrum UniformSampleOneLight(const Scene *scene,
         const Renderer *renderer, MemoryArena &arena, const Point &p,
         const Normal &n, const Vector &wo, float rayEpsilon, float time,
-        BSDF *bsdf, const Sample *sample, RNG &rng, int lightNumOffset,
+        BSDF *bsdf, const Sample *sample, RNG &rng, Spectrum& directL, int lightNumOffset,
         const LightSampleOffsets *lightSampleOffset,
         const BSDFSampleOffsets *bsdfSampleOffset) {
     // Randomly choose a single light to sample, _light_
@@ -110,7 +113,7 @@ Spectrum UniformSampleOneLight(const Scene *scene,
     return (float)nLights *
         EstimateDirect(scene, renderer, arena, light, p, n, wo,
                        rayEpsilon, time, bsdf, rng, lightSample,
-                       bsdfSample, BxDFType(BSDF_ALL & ~BSDF_SPECULAR));
+                       bsdfSample, BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL);
 }
 
 
@@ -118,7 +121,7 @@ Spectrum EstimateDirect(const Scene *scene, const Renderer *renderer,
         MemoryArena &arena, const Light *light, const Point &p,
         const Normal &n, const Vector &wo, float rayEpsilon, float time,
         const BSDF *bsdf, RNG &rng, const LightSample &lightSample,
-        const BSDFSample &bsdfSample, BxDFType flags) {
+        const BSDFSample &bsdfSample, BxDFType flags, Spectrum& directL) {
     Spectrum Ld(0.);
     // Sample light source with multiple importance sampling
     Vector wi;
@@ -137,6 +140,7 @@ Spectrum EstimateDirect(const Scene *scene, const Renderer *renderer,
                 bsdfPdf = bsdf->Pdf(wo, wi, flags);
                 float weight = PowerHeuristic(1, lightPdf, 1, bsdfPdf);
                 Ld += f * Li * (AbsDot(wi, n) * weight / lightPdf);
+                directL += Li * (AbsDot(wi, n) * weight / lightPdf);
             }
         }
     }
@@ -167,6 +171,7 @@ Spectrum EstimateDirect(const Scene *scene, const Renderer *renderer,
             if (!Li.IsBlack()) {
                 Li *= renderer->Transmittance(scene, ray, NULL, rng, arena);
                 Ld += f * Li * AbsDot(wi, n) * weight / bsdfPdf;
+                directL += Li * AbsDot(wi, n) * weight / bsdfPdf;
             }
         }
     }

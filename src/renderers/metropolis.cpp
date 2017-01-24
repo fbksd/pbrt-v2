@@ -371,11 +371,12 @@ Spectrum MetropolisRenderer::Lpath(const Scene *scene,
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
             
+            Spectrum directL;
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
                                 ls.lightSample, ls.bsdfSample,
-                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) / lightPdf;
+                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL) / lightPdf;
             PBRT_MLT_FINISHED_ESTIMATE_DIRECT();
         }
         previousSpecular = vc.specularBounce;
@@ -432,11 +433,12 @@ Spectrum MetropolisRenderer::Lbidir(const Scene *scene,
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
             
+            Spectrum directL;
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
                                 ls.lightSample, ls.bsdfSample,
-                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR)) / lightPdf;
+                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL) / lightPdf;
             PBRT_MLT_FINISHED_ESTIMATE_DIRECT();
         }
         previousSpecular = vc.specularBounce;

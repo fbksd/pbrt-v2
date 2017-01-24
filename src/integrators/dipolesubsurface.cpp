@@ -300,8 +300,9 @@ Spectrum DipoleSubsurfaceIntegrator::Li(const Scene *scene, const Renderer *rend
             PBRT_SUBSURFACE_FINISHED_OCTREE_LOOKUP();
         }
     }
+    Spectrum directL;
     L += UniformSampleAllLights(scene, renderer, arena, p, n,
-        wo, isect.rayEpsilon, ray.time, bsdf, sample, rng, lightSampleOffsets,
+        wo, isect.rayEpsilon, ray.time, bsdf, sample, rng, directL, lightSampleOffsets,
         bsdfSampleOffsets);
     if (ray.depth < maxSpecularDepth) {
         // Trace rays for specular reflection and refraction

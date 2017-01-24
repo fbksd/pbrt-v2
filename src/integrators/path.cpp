@@ -72,6 +72,7 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         const Normal &n = bsdf->dgShading.nn;
 
         Vector wo = -ray.d;
+        Spectrum directL;
         if (bounces < SAMPLE_DEPTH)
         {
             sampleBuffer->set(WORLD_X, bounces, p.x);
@@ -86,18 +87,16 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
             sampleBuffer->set(TEXTURE_COLOR_G, bounces, rgb[1]);
             sampleBuffer->set(TEXTURE_COLOR_B, bounces, rgb[2]);
 
-            Spectrum Ltmp;
-            Ltmp = pathThroughput *
+            L = pathThroughput *
                  UniformSampleOneLight(scene, renderer, arena, p, n, wo,
-                     isectp->rayEpsilon, ray.time, bsdf, sample, rng,
+                     isectp->rayEpsilon, ray.time, bsdf, sample, rng, directL,
                      lightNumOffset[bounces], &lightSampleOffsets[bounces],
                      &bsdfSampleOffsets[bounces]);
-            L += Ltmp;
 
             if(bounces == 0)
             {
                 float rgb[] = {0.f, 0.f, 0.f};
-                Ltmp.ToRGB(rgb);
+                directL.ToRGB(rgb);
                 sampleBuffer->set(DIRECT_LIGHT_R, rgb[0]);
                 sampleBuffer->set(DIRECT_LIGHT_G, rgb[1]);
                 sampleBuffer->set(DIRECT_LIGHT_B, rgb[2]);
@@ -111,7 +110,7 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         else
             L += pathThroughput *
                  UniformSampleOneLight(scene, renderer, arena, p, n, wo,
-                     isectp->rayEpsilon, ray.time, bsdf, sample, rng);
+                     isectp->rayEpsilon, ray.time, bsdf, sample, rng, directL);
 
         // Sample BSDF to get new path direction
 

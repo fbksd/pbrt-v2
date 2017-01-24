@@ -155,8 +155,9 @@ Spectrum IGIIntegrator::Li(const Scene *scene, const Renderer *renderer,
     BSDF *bsdf = isect.GetBSDF(ray, arena);
     const Point &p = bsdf->dgShading.p;
     const Normal &n = bsdf->dgShading.nn;
+    Spectrum directL;
     L += UniformSampleAllLights(scene, renderer, arena, p, n,
-                    wo, isect.rayEpsilon, ray.time, bsdf, sample, rng,
+                    wo, isect.rayEpsilon, ray.time, bsdf, sample, rng, directL,
                     lightSampleOffsets, bsdfSampleOffsets);
     // Compute indirect illumination with virtual lights
     uint32_t lSet = min(uint32_t(sample->oneD[vlSetOffset][0] * nLightSets),

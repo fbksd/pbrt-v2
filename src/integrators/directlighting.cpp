@@ -114,18 +114,17 @@ Spectrum DirectLightingIntegrator::Li(const Scene *scene,
         // Apply direct lighting strategy
         switch (strategy) {
             case SAMPLE_ALL_UNIFORM:
-                directL = UniformSampleAllLights(scene, renderer, arena, p, n, wo,
-                    isect.rayEpsilon, ray.time, bsdf, sample, rng,
+                L = UniformSampleAllLights(scene, renderer, arena, p, n, wo,
+                    isect.rayEpsilon, ray.time, bsdf, sample, rng, directL,
                     lightSampleOffsets, bsdfSampleOffsets);
                 break;
             case SAMPLE_ONE_UNIFORM:
-                directL = UniformSampleOneLight(scene, renderer, arena, p, n, wo,
-                    isect.rayEpsilon, ray.time, bsdf, sample, rng,
+                L = UniformSampleOneLight(scene, renderer, arena, p, n, wo,
+                    isect.rayEpsilon, ray.time, bsdf, sample, rng, directL,
                     lightNumOffset, lightSampleOffsets, bsdfSampleOffsets);
                 break;
         }
     }
-    L += directL;
 
     if(ray.depth == 0 && sampleBuffer)
     {

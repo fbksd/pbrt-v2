@@ -205,8 +205,9 @@ Spectrum IrradianceCacheIntegrator::Li(const Scene *scene,
     const Normal &n = bsdf->dgShading.nn;
     L += isect.Le(wo);
     // Compute direct lighting for irradiance cache
+    Spectrum directL;
     L += UniformSampleAllLights(scene, renderer, arena, p, n, wo,
-             isect.rayEpsilon, ray.time, bsdf, sample, rng,
+             isect.rayEpsilon, ray.time, bsdf, sample, rng, directL,
              lightSampleOffsets, bsdfSampleOffsets);
 
     // Compute indirect lighting for irradiance cache
@@ -353,9 +354,10 @@ Spectrum IrradianceCacheIntegrator::pathL(Ray &r, const Scene *scene,
         const Point &p = bsdf->dgShading.p;
         const Normal &n = bsdf->dgShading.nn;
         Vector wo = -ray.d;
+        Spectrum directL;
         L += pathThroughput *
             UniformSampleOneLight(scene, renderer, arena, p, n, wo, isect.rayEpsilon,
-                                  ray.time, bsdf, NULL, rng);
+                                  ray.time, bsdf, NULL, rng, directL);
         if (pathLength+1 == maxIndirectDepth) break;
         // Sample BSDF to get new path direction
         // Get random numbers for sampling new direction, \mono{bs1}, \mono{bs2}, and \mono{bcs}
