@@ -10,6 +10,7 @@
 #include "intersection.h"
 #include "samplers/stratified.h"
 #include "samplers/random.h"
+#include "samplers/lowdiscrepancy.h"
 #include "Benchmark/RenderingServer/RenderingServer.h"
 #include <QEventLoop>
 
@@ -147,8 +148,8 @@ void ServerRendererTask::Run() {
         // Generate camera rays and compute radiance along rays
         for (int i = 0; i < sampleCount; ++i) {
             SampleBuffer sampleBuffer = pipe.getBuffer();
-            sampleBuffer.set(IMAGE_X, samples[i].imageX);
-            sampleBuffer.set(IMAGE_Y, samples[i].imageY);
+            samples[i].imageX = sampleBuffer.set(IMAGE_X, samples[i].imageX);
+            samples[i].imageY = sampleBuffer.set(IMAGE_Y, samples[i].imageY);
             samples[i].lensU = sampleBuffer.set(LENS_U, samples[i].lensU);
             samples[i].lensV = sampleBuffer.set(LENS_V, samples[i].lensV);
             samples[i].time = sampleBuffer.set(TIME, samples[i].time);
@@ -418,7 +419,7 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                                                              reporter, sppSampler, m_sample,
                                                              m_visualizeObjectIds,
                                                              nSppTasks-1-i, nSppTasks, currentOffset, false));
-                currentOffset += sppSampler->getSubSamplerSize(nSppTasks-1-i, nSppTasks) * m_layout.getSampleSize();
+                currentOffset += size_t(sppSampler->getSubSamplerSize(nSppTasks-1-i, nSppTasks)) * m_layout.getSampleSize() * spp;
             }
         }
         else
@@ -429,7 +430,7 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                                                              m_visualizeObjectIds,
                                                              nSppTasks-1-i, nSppTasks, 0, true));
         }
-        sppOffset = numPixels * spp * m_layout.getSampleSize();
+        sppOffset = size_t(numPixels) * spp * m_layout.getSampleSize();
     }
 
     if(sparseSampler)
