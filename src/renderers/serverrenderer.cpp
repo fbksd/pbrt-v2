@@ -133,16 +133,15 @@ void ServerRendererTask::Run() {
 
     // Get samples from _Sampler_ and update image
     int sampleCount;
-    int s = sampler->samplesPerPixel;
+    int s = 0;
     while ((sampleCount = sampler->GetMoreSamples(samples, rng)) > 0) {
-        if(m_seekPipeByPixel && s++ == sampler->samplesPerPixel)
+        if(m_seekPipeByPixel && s == 0)
         {
-            //WARNING: Assumes that all sampleCount samples
-            // are for the same pixel untill sampler->samplesPerPixel.
+            //WARNING: Assumes that sampleCount <= spp and that all sampleCount samples
+            // are for the same pixel.
             int x = samples[0].imageX;
             int y = samples[0].imageY;
             pipe.seek(x, y, sampler->samplesPerPixel, camera->film->xResolution);
-            s = 1;
         }
 
         // Generate camera rays and compute radiance along rays
@@ -209,6 +208,9 @@ void ServerRendererTask::Run() {
             sampleBuffer.set(COLOR_B, rgb[2]);
             sampleBuffer.set(DEPTH, rays[i].maxt);
             pipe << sampleBuffer;
+
+            if(++s == sampler->samplesPerPixel)
+                s = 0;
 
             PBRT_FINISHED_CAMERA_RAY_INTEGRATION(&rays[i], &samples[i], &Ls[i]);
         }
@@ -355,13 +357,13 @@ void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int *resultSize
     *resultSize = totalNumSamples;
     int spp = isSPP ? numSamples : totalNumSamples / (float)(numPixels);
     int rest = totalNumSamples % numPixels;
-    int nSppTasks = max(1, spp*numPixels / (16*16));
+    int nSppTasks = max(32 * NumSystemCores(), numPixels / (16*16));
     nSppTasks = RoundUpPow2(nSppTasks);
     int nRestTasks = max(1, rest / (16*16));
     nRestTasks = RoundUpPow2(nRestTasks);
     bool hasInputPos = m_layout.hasInput("IMAGE_X") || m_layout.hasInput("IMAGE_Y");
 
-    std::unique_ptr<RandomSampler> sppSampler;
+    std::unique_ptr<Sampler> sppSampler;
     std::unique_ptr<SparseSampler> sparseSampler;
     if(spp)
         sppSampler.reset(new RandomSampler(0, m_width, 0, m_height, spp,
