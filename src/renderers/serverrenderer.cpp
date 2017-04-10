@@ -206,7 +206,10 @@ void ServerRendererTask::Run() {
             sampleBuffer.set(COLOR_R, rgb[0]);
             sampleBuffer.set(COLOR_G, rgb[1]);
             sampleBuffer.set(COLOR_B, rgb[2]);
-            sampleBuffer.set(DEPTH, rays[i].maxt);
+            if(std::isfinite(rays[i].maxt))
+                sampleBuffer.set(DEPTH, rays[i].maxt);
+            else
+                sampleBuffer.set(DEPTH, 0.f);
             pipe << sampleBuffer;
 
             if(++s == sampler->samplesPerPixel)
