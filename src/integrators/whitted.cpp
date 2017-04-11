@@ -71,6 +71,15 @@ Spectrum WhittedIntegrator::Li(const Scene *scene,
         sampleBuffer->set(TEXTURE_COLOR_R, rgb[0]);
         sampleBuffer->set(TEXTURE_COLOR_G, rgb[1]);
         sampleBuffer->set(TEXTURE_COLOR_B, rgb[2]);
+        sampleBuffer->set(WORLD_X_NS, p.x);
+        sampleBuffer->set(WORLD_Y_NS, p.y);
+        sampleBuffer->set(WORLD_Z_NS, p.z);
+        sampleBuffer->set(NORMAL_X_NS, n.x);
+        sampleBuffer->set(NORMAL_Y_NS, n.y);
+        sampleBuffer->set(NORMAL_Z_NS, n.z);
+        sampleBuffer->set(TEXTURE_COLOR_R_NS, rgb[0]);
+        sampleBuffer->set(TEXTURE_COLOR_G_NS, rgb[1]);
+        sampleBuffer->set(TEXTURE_COLOR_B_NS, rgb[2]);
     }
 
     // Add contribution of each light source

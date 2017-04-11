@@ -100,13 +100,21 @@ Spectrum DirectLightingIntegrator::Li(const Scene *scene,
         sampleBuffer->set(NORMAL_X, nn.x);
         sampleBuffer->set(NORMAL_Y, nn.y);
         sampleBuffer->set(NORMAL_Z, nn.z);
-
         Spectrum tex = bsdf->getTextureColor();
         float rgb[3];
         tex.ToRGB(rgb);
         sampleBuffer->set(TEXTURE_COLOR_R, rgb[0]);
         sampleBuffer->set(TEXTURE_COLOR_G, rgb[1]);
         sampleBuffer->set(TEXTURE_COLOR_B, rgb[2]);
+        sampleBuffer->set(WORLD_X_NS, p.x);
+        sampleBuffer->set(WORLD_Y_NS, p.y);
+        sampleBuffer->set(WORLD_Z_NS, p.z);
+        sampleBuffer->set(NORMAL_X_NS, nn.x);
+        sampleBuffer->set(NORMAL_Y_NS, nn.y);
+        sampleBuffer->set(NORMAL_Z_NS, nn.z);
+        sampleBuffer->set(TEXTURE_COLOR_R_NS, rgb[0]);
+        sampleBuffer->set(TEXTURE_COLOR_G_NS, rgb[1]);
+        sampleBuffer->set(TEXTURE_COLOR_B_NS, rgb[2]);
     }
 
     // Compute direct lighting for _DirectLightingIntegrator_ integrator

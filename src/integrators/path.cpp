@@ -58,6 +58,7 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
     Spectrum pathThroughput = 1., L = 0.;
     RayDifferential ray(r);
     bool specularBounce = false;
+    bool hadNonSpecularBounce = false;
     Intersection localIsect;
     const Intersection *isectp = &isect;
     for (int bounces = 0; ; ++bounces) {
@@ -130,6 +131,22 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
         if (f.IsBlack() || pdf == 0.)
             break;
         specularBounce = (flags & BSDF_SPECULAR) != 0;
+        if(!hadNonSpecularBounce && !specularBounce && sampleBuffer)
+        {
+            hadNonSpecularBounce = true;
+            sampleBuffer->set(WORLD_X_NS, p.x);
+            sampleBuffer->set(WORLD_Y_NS, p.y);
+            sampleBuffer->set(WORLD_Z_NS, p.z);
+            Normal nn = Faceforward(n, wo);
+            sampleBuffer->set(NORMAL_X_NS, nn.x);
+            sampleBuffer->set(NORMAL_Y_NS, nn.y);
+            sampleBuffer->set(NORMAL_Z_NS, nn.z);
+            float rgb[3];
+            bsdf->getTextureColor().ToRGB(rgb);
+            sampleBuffer->set(TEXTURE_COLOR_R_NS, rgb[0]);
+            sampleBuffer->set(TEXTURE_COLOR_G_NS, rgb[1]);
+            sampleBuffer->set(TEXTURE_COLOR_B_NS, rgb[2]);
+        }
         pathThroughput *= f * AbsDot(wi, n) / pdf;
         ray = RayDifferential(p, wi, ray, isectp->rayEpsilon);
 
