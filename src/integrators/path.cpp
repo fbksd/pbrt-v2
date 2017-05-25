@@ -89,7 +89,7 @@ Spectrum PathIntegrator::Li(const Scene *scene, const Renderer *renderer,
             sampleBuffer->set(TEXTURE_COLOR_G, bounces, rgb[1]);
             sampleBuffer->set(TEXTURE_COLOR_B, bounces, rgb[2]);
 
-            L = pathThroughput *
+            L += pathThroughput *
                  UniformSampleOneLight(scene, renderer, arena, p, n, wo,
                      isectp->rayEpsilon, ray.time, bsdf, sample, rng, directL,
                      lightNumOffset[bounces], &lightSampleOffsets[bounces],
