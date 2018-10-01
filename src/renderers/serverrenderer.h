@@ -4,7 +4,7 @@
 #include "pbrt.h"
 #include "renderer.h"
 #include "parallel.h"
-#include "Benchmark/Core/SampleLayout.h"
+#include <fbksd/core/SampleLayout.h>
 
 class SceneInfo;
 class CropWindow;
@@ -24,9 +24,8 @@ public:
         const Sample *sample, RNG &rng, MemoryArena &arena) const;
 
     void getSceneInfo(SceneInfo *scene);
-    void evaluateSamples(bool isSPP, int numSamples, int* resultSize);
-    void evaluateSamplesCrop(bool isSPP, int numSamples, const CropWindow& crop, int* resultSize);
-    void evaluateSamplesPDF(bool isSPP, int numSamples, const float* pdf, int* resultSize);
+    bool evaluateSamples(int64_t spp, int64_t remainingCount);
+
 private:
     std::vector<Task*> createTasks(Sampler* sppSampler,
                                    Sampler* sparseSampler,
@@ -55,12 +54,17 @@ class ServerRendererTask : public Task {
 public:
     // SamplerRendererTask Public Methods
     ServerRendererTask(const Scene *sc, Renderer *ren, Camera *c,
-                        ProgressReporter &pr, Sampler *ms, Sample *sam, 
+                        ProgressReporter &pr, Sampler *ms, Sample *sam,
                         bool visIds, int tn, int tc, size_t pipeOffset = 0, bool seekPipeByPixel = true)
       : reporter(pr)
     {
         scene = sc; renderer = ren; camera = c; mainSampler = ms;
         origSample = sam; visualizeObjectIds = visIds; taskNum = tn; taskCount = tc;
+#ifdef PBRT2_RANDOM_SEEDING
+        seed = rand();
+#else
+        seed = taskNum;
+#endif
         m_pipeOffset = pipeOffset;
         m_seekPipeByPixel = seekPipeByPixel;
     }
@@ -74,6 +78,7 @@ private:
     Sample *origSample;
     bool visualizeObjectIds;
     int taskNum, taskCount;
+    int seed;
     size_t m_pipeOffset;
     bool m_seekPipeByPixel;
 };

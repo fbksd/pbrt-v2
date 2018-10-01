@@ -35,7 +35,7 @@
 #include "integrators/directlighting.h"
 #include "intersection.h"
 #include "paramset.h"
-#include "Benchmark/RenderingServer/RenderingServer.h"
+#include <fbksd/renderer/RenderingServer.h>
 
 // DirectLightingIntegrator Method Definitions
 DirectLightingIntegrator::DirectLightingIntegrator(LightStrategy st, int md) {

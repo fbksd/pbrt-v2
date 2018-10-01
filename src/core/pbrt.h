@@ -30,7 +30,7 @@
  */
 
 #if defined(_MSC_VER)
-#define NOMINMAX 
+#define NOMINMAX
 #pragma once
 #endif
 
@@ -53,6 +53,10 @@
 #elif defined(__OpenBSD__)
 #define PBRT_IS_OPENBSD
 #endif
+
+// Turns on random seeding for sample generation.
+// Random seeding makes the renderer non-deterministic.
+#define PBRT2_RANDOM_SEEDING
 
 // Global Include Files
 #include <math.h>

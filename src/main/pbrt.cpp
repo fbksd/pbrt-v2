@@ -36,14 +36,13 @@
 #include "probes.h"
 #include "parser.h"
 #include "parallel.h"
-
-#include <QCoreApplication>
-#include <QTimer>
+#include <time.h>
 
 // main program
 int main(int argc, char *argv[]) {
-    QCoreApplication a(argc, argv);
-
+#ifdef PBRT2_RANDOM_SEEDING
+    srand(time(NULL));
+#endif
     setlocale(LC_NUMERIC,"C");
 
     Options options;
@@ -85,13 +84,7 @@ int main(int argc, char *argv[]) {
                 Error("Couldn't open scene file \"%s\"", filenames[i].c_str());
     }
     pbrtCleanup();
-    qDebug("PBRT cleaned up.");
-
-    // QCoreApplication::quit() should be called after exec(), so I use this timer to do the trick.
-    QTimer timer;
-    QObject::connect(&timer, &QTimer::timeout, &a, &QCoreApplication::quit);
-    timer.start();
-    return a.exec();
+    return 0;
 }
 
 

@@ -11,8 +11,7 @@
 #include "samplers/stratified.h"
 #include "samplers/random.h"
 #include "samplers/lowdiscrepancy.h"
-#include "Benchmark/RenderingServer/RenderingServer.h"
-#include <QEventLoop>
+#include <fbksd/renderer/RenderingServer.h>
 
 namespace
 {
@@ -121,7 +120,7 @@ void ServerRendererTask::Run() {
 
     // Declare local variables used for rendering loop
     MemoryArena arena;
-    RNG rng(taskNum);
+    RNG rng(seed);
 
     // Allocate space for samples and intersections
     int maxSamples = sampler->MaximumSampleCount();
@@ -267,31 +266,23 @@ void ServerRenderer::Render(const Scene *scene) {
     m_sample = new Sample(m_sampler, m_surfaceIntegrator, m_volumeIntegrator, scene);
     PBRT_FINISHED_PREPROCESSING();
 
-    QEventLoop eventLoop;
-    std::unique_ptr<RenderingServer> server(new RenderingServer);
-    QObject::connect(server.get(), &RenderingServer::setParameters,
-        [this](int maxSPP, const SampleLayout& layout, float* samplesBuffer, float* pdfBuffer)
-        { m_layout = layout; }
-    );
-    QObject::connect(server.get(), &RenderingServer::getSceneInfo,
-        [this](SceneInfo* scene)
-        { this->getSceneInfo(scene); }
-    );
-    QObject::connect(server.get(), &RenderingServer::evaluateSamples,
-        [this](bool isSPP, int numSamples, int* resultSize)
-        { this->evaluateSamples(isSPP, numSamples, resultSize); }
-    );
-    QObject::connect(server.get(), &RenderingServer::evaluateSamplesCrop,
-        [this](bool isSPP, int numSamples, const CropWindow& crop, int* resultSize)
-        { this->evaluateSamplesCrop(isSPP, numSamples, crop, resultSize); }
-    );
-    QObject::connect(server.get(), &RenderingServer::evaluateSamplesPDF,
-        [this](bool isSPP, int numSamples, const float* pdf, int* resultSize)
-        { this->evaluateSamplesPDF(isSPP, numSamples, pdf, resultSize); }
-    );
-    QObject::connect(server.get(), &RenderingServer::finishRender, &eventLoop, &QEventLoop::quit);
-    server->startServer(2227);
-    eventLoop.exec();
+    RenderingServer server;
+    server.onSetParameters(
+        [this](const SampleLayout& layout){
+        m_layout = layout;
+    });
+
+    server.onGetSceneInfo([this](){
+        SceneInfo info;
+        this->getSceneInfo(&info);
+        return info;
+    });
+
+    server.onEvaluateSamples([this](int64_t spp, int64_t remainingCount){
+        return this->evaluateSamples(spp, remainingCount);
+    });
+
+    server.run(/*2227*/);
 }
 
 
@@ -352,54 +343,48 @@ void ServerRenderer::getSceneInfo(SceneInfo *info)
     info->set<bool>("has_area_lights", hasAreaLights);
 }
 
-void ServerRenderer::evaluateSamples(bool isSPP, int numSamples, int *resultSize)
+bool ServerRenderer::evaluateSamples(int64_t spp, int64_t remainingCount)
 {
     PBRT_STARTED_RENDERING();
-    int numPixels = m_width * m_height;
-    int totalNumSamples = isSPP ? numPixels * numSamples : numSamples;
-    *resultSize = totalNumSamples;
-    int spp = isSPP ? numSamples : totalNumSamples / (float)(numPixels);
-    int rest = totalNumSamples % numPixels;
-    int nSppTasks = max(32 * NumSystemCores(), numPixels / (16*16));
+    int64_t numPixels = m_width * m_height;
+    int nSppTasks = max(INT64_C(32) * NumSystemCores(), numPixels / (16*16));
     nSppTasks = RoundUpPow2(nSppTasks);
-    int nRestTasks = max(1, rest / (16*16));
+    int nRestTasks = max(INT64_C(1), remainingCount / (16*16));
     nRestTasks = RoundUpPow2(nRestTasks);
     bool hasInputPos = m_layout.hasInput("IMAGE_X") || m_layout.hasInput("IMAGE_Y");
 
     std::unique_ptr<Sampler> sppSampler;
     std::unique_ptr<SparseSampler> sparseSampler;
     if(spp)
-        sppSampler.reset(new RandomSampler(0, m_width, 0, m_height, spp,
+        sppSampler.reset(new LDSampler(0, m_width, 0, m_height, spp,
                                            m_sampler->shutterOpen,
                                            m_sampler->shutterClose));
     else
         nSppTasks = 0;
 
-    if(rest)
-        sparseSampler.reset(new SparseSampler(0, m_width, 0, m_height, rest,
+    if(remainingCount)
+        sparseSampler.reset(new SparseSampler(0, m_width, 0, m_height, remainingCount,
                                               m_sampler->shutterOpen,
                                               m_sampler->shutterClose));
     else
         nRestTasks = 0;
 
     ProgressReporter reporter(nSppTasks + nRestTasks, "Rendering");
-    vector<Task*> renderTasks = createTasks(sppSampler.get(), sparseSampler.get(), hasInputPos, nSppTasks, nRestTasks, numPixels, spp, reporter);
+    vector<Task*> renderTasks = createTasks(sppSampler.get(),
+                                            sparseSampler.get(),
+                                            hasInputPos,
+                                            nSppTasks,
+                                            nRestTasks,
+                                            numPixels,
+                                            spp,
+                                            reporter);
     EnqueueTasks(renderTasks);
     WaitForAllTasks();
     for (size_t i = 0; i < renderTasks.size(); ++i)
         delete renderTasks[i];
     reporter.Done();
     PBRT_FINISHED_RENDERING();
-}
-
-void ServerRenderer::evaluateSamplesCrop(bool isSPP, int numSamples, const CropWindow &crop, int *resultSize)
-{
-
-}
-
-void ServerRenderer::evaluateSamplesPDF(bool isSPP, int numSamples, const float *pdf, int *resultSize)
-{
-
+    return true;
 }
 
 std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,

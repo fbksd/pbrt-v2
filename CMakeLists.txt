@@ -6,14 +6,7 @@ add_definitions(-DPBRT_HAS_OPENEXR -DPBRT_PROBES_NONE)
 # turn on c++11
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-# Benchmark lib
-include_directories(${PROJECT_SOURCE_DIR}/../../Benchmark/include)
-link_directories(${PROJECT_BINARY_DIR}/../../Benchmark)
-
-# Qt
-set(CMAKE_AUTOMOC ON)
-find_package(Qt5Core)
-find_package(Qt5Network)
+find_package(fbksd)
 
 # OpenEXR
 include_directories(/usr/include/OpenEXR)
@@ -56,7 +49,7 @@ file(GLOB CORE_FILES
     "src/volumes/*.cpp"
 )
 add_library(core ${CORE_FILES})
-target_link_libraries(core RenderingServer BenchmarkCore Qt5::Network Qt5::Core -lrt ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
+target_link_libraries(core PRIVATE fbksd::renderer ${CMAKE_THREAD_LIBS_INIT} ${OPENEXR_LIBRARIES})
 
 # pbrt app
 file(GLOB PBRT_FILES
@@ -65,3 +58,5 @@ file(GLOB PBRT_FILES
 )
 add_executable(pbrt ${PBRT_FILES})
 target_link_libraries(pbrt core)
+install(TARGETS pbrt RUNTIME DESTINATION .)
+install(FILES info.json DESTINATION .)

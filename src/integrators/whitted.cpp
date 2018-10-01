@@ -35,7 +35,7 @@
 #include "integrators/whitted.h"
 #include "intersection.h"
 #include "paramset.h"
-#include "Benchmark/RenderingServer/RenderingServer.h"
+#include <fbksd/renderer/RenderingServer.h>
 
 // WhittedIntegrator Method Definitions
 Spectrum WhittedIntegrator::Li(const Scene *scene,
