@@ -38,7 +38,8 @@
 
 // core/renderer.h*
 #include "pbrt.h"
-class SampleBuffer;
+namespace fbksd { class SampleBuffer; }
+using namespace fbksd;
 
 // Renderer Declarations
 class Renderer {

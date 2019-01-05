@@ -4,7 +4,7 @@ project(pbrt-v2)
 add_definitions(-DPBRT_HAS_OPENEXR -DPBRT_PROBES_NONE)
 
 # turn on c++11
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(fbksd)
 

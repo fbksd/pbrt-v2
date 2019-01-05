@@ -36,6 +36,7 @@
 #include "intersection.h"
 #include "paramset.h"
 #include <fbksd/renderer/RenderingServer.h>
+using namespace fbksd;
 
 // DirectLightingIntegrator Method Definitions
 DirectLightingIntegrator::DirectLightingIntegrator(LightStrategy st, int md) {

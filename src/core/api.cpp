@@ -133,6 +133,7 @@
  #define snprintf _snprintf
  #endif
 using std::map;
+using namespace fbksd;
 
 // API Global Variables
 Options PbrtOptions;

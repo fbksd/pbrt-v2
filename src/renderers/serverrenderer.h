@@ -5,9 +5,12 @@
 #include "renderer.h"
 #include "parallel.h"
 #include <fbksd/core/SampleLayout.h>
+using namespace fbksd;
 
-class SceneInfo;
-class CropWindow;
+namespace fbksd {
+    class SceneInfo;
+    class CropWindow;
+}
 
 // SamplerRenderer Declarations
 class ServerRenderer : public Renderer {

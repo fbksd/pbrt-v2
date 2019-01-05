@@ -46,6 +46,7 @@
 #include "material.h"
 #include "probes.h"
 #include "renderer.h"
+using namespace fbksd;
 
 // Integrator Declarations
 class Integrator {
