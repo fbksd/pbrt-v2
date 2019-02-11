@@ -12,6 +12,7 @@
 #include "samplers/random.h"
 #include "samplers/lowdiscrepancy.h"
 #include <fbksd/renderer/RenderingServer.h>
+#include <iostream>
 
 namespace
 {
@@ -115,8 +116,9 @@ void ServerRendererTask::Run() {
         return;
     }
 
-    SamplesPipe pipe;
-    pipe.seek(m_pipeOffset);
+    SamplesPipe pipe({sampler->xPixelStart, sampler->yPixelStart},
+                     {sampler->xPixelEnd, sampler->yPixelEnd},
+                     mainSampler->getSubSamplerSize(taskNum, taskCount));
 
     // Declare local variables used for rendering loop
     MemoryArena arena;
@@ -140,7 +142,7 @@ void ServerRendererTask::Run() {
             // are for the same pixel.
             int x = samples[0].imageX;
             int y = samples[0].imageY;
-            pipe.seek(x, y, sampler->samplesPerPixel, camera->film->xResolution);
+            pipe.seek(x, y);
         }
 
         // Generate camera rays and compute radiance along rays
@@ -267,19 +269,33 @@ void ServerRenderer::Render(const Scene *scene) {
     PBRT_FINISHED_PREPROCESSING();
 
     RenderingServer server;
-    server.onSetParameters(
-        [this](const SampleLayout& layout){
+
+    server.onGetTileSize([](){ return 16; });
+
+    server.onSetParameters([this](const SampleLayout& layout)
+    {
         m_layout = layout;
     });
 
-    server.onGetSceneInfo([this](){
+    server.onGetSceneInfo([this]()
+    {
         SceneInfo info;
         this->getSceneInfo(&info);
         return info;
     });
 
-    server.onEvaluateSamples([this](int64_t spp, int64_t remainingCount){
-        return this->evaluateSamples(spp, remainingCount);
+    server.onEvaluateSamples([this](int64_t spp, int64_t remainingCount, int pipeSize)
+    {
+        return this->evaluateSamples(spp, remainingCount, pipeSize);
+    });
+
+    server.onLastTileConsumed([this]()
+    {
+        WaitForAllTasks();
+        for (size_t i = 0; i < m_renderTasks.size(); ++i)
+            delete m_renderTasks[i];
+        m_reporter->Done();
+        PBRT_FINISHED_RENDERING();
     });
 
     server.run(/*2227*/);
@@ -343,7 +359,7 @@ void ServerRenderer::getSceneInfo(SceneInfo *info)
     info->set<bool>("has_area_lights", hasAreaLights);
 }
 
-bool ServerRenderer::evaluateSamples(int64_t spp, int64_t remainingCount)
+void ServerRenderer::evaluateSamples(int64_t spp, int64_t remainingCount, int pipeSize)
 {
     PBRT_STARTED_RENDERING();
     int64_t numPixels = m_width * m_height;
@@ -353,38 +369,37 @@ bool ServerRenderer::evaluateSamples(int64_t spp, int64_t remainingCount)
     nRestTasks = RoundUpPow2(nRestTasks);
     bool hasInputPos = m_layout.hasInput("IMAGE_X") || m_layout.hasInput("IMAGE_Y");
 
-    std::unique_ptr<Sampler> sppSampler;
-    std::unique_ptr<SparseSampler> sparseSampler;
     if(spp)
-        sppSampler.reset(new LDSampler(0, m_width, 0, m_height, spp,
-                                           m_sampler->shutterOpen,
-                                           m_sampler->shutterClose));
+    {
+        if(RoundUpPow2(spp) == spp)
+            m_sppSampler.reset(new LDSampler(0, m_width, 0, m_height, spp,
+                                             m_sampler->shutterOpen,
+                                             m_sampler->shutterClose));
+        else
+            m_sppSampler.reset(new RandomSampler(0, m_width, 0, m_height, spp,
+                                                 m_sampler->shutterOpen,
+                                                 m_sampler->shutterClose));
+    }
     else
         nSppTasks = 0;
 
     if(remainingCount)
-        sparseSampler.reset(new SparseSampler(0, m_width, 0, m_height, remainingCount,
-                                              m_sampler->shutterOpen,
-                                              m_sampler->shutterClose));
+        m_sparseSampler.reset(new SparseSampler(0, m_width, 0, m_height, remainingCount,
+                                                m_sampler->shutterOpen,
+                                                m_sampler->shutterClose));
     else
         nRestTasks = 0;
 
-    ProgressReporter reporter(nSppTasks + nRestTasks, "Rendering");
-    vector<Task*> renderTasks = createTasks(sppSampler.get(),
-                                            sparseSampler.get(),
-                                            hasInputPos,
-                                            nSppTasks,
-                                            nRestTasks,
-                                            numPixels,
-                                            spp,
-                                            reporter);
-    EnqueueTasks(renderTasks);
-    WaitForAllTasks();
-    for (size_t i = 0; i < renderTasks.size(); ++i)
-        delete renderTasks[i];
-    reporter.Done();
-    PBRT_FINISHED_RENDERING();
-    return true;
+    m_reporter.reset(new ProgressReporter(nSppTasks + nRestTasks, "Rendering"));
+    m_renderTasks = createTasks(m_sppSampler.get(),
+                                m_sparseSampler.get(),
+                                hasInputPos,
+                                nSppTasks,
+                                nRestTasks,
+                                numPixels,
+                                spp,
+                                *m_reporter);
+    EnqueueTasks(m_renderTasks);
 }
 
 std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
@@ -397,20 +412,15 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                                                ProgressReporter& reporter)
 {
     std::vector<Task*> renderTasks;
-    size_t sppOffset = 0;
     if(sppSampler)
     {
         if(hasInputPos)
         {
-            size_t currentOffset = 0;
             for (int i = 0; i < nSppTasks; ++i)
-            {
                 renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                              reporter, sppSampler, m_sample,
                                                              m_visualizeObjectIds,
-                                                             nSppTasks-1-i, nSppTasks, currentOffset, false));
-                currentOffset += size_t(sppSampler->getSubSamplerSize(nSppTasks-1-i, nSppTasks)) * m_layout.getSampleSize() * spp;
-            }
+                                                             nSppTasks-1-i, nSppTasks, false));
         }
         else
         {
@@ -418,21 +428,18 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                 renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                              reporter, sppSampler, m_sample,
                                                              m_visualizeObjectIds,
-                                                             nSppTasks-1-i, nSppTasks, 0, true));
+                                                             nSppTasks-1-i, nSppTasks, true));
         }
-        sppOffset = size_t(numPixels) * spp * m_layout.getSampleSize();
     }
 
     if(sparseSampler)
     {
-        size_t currentOffset = sppOffset;
         for (int i = 0; i < nSparseTasks; ++i)
         {
             renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                          reporter, sparseSampler, m_sample,
                                                          m_visualizeObjectIds,
-                                                         nSparseTasks-1-i, nSparseTasks, currentOffset, false));
-            currentOffset += sparseSampler->getSubSamplerSize(nSparseTasks-1-i, nSparseTasks) * m_layout.getSampleSize();
+                                                         nSparseTasks-1-i, nSparseTasks, false));
         }
     }
 

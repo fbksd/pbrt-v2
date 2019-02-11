@@ -56,7 +56,7 @@ int Sampler::getSubSamplerSize(int num, int count) const
     int x0, x1, y0, y1;
     ComputeSubWindow(num, count, &x0, &x1, &y0, &y1);
     if (x0 == x1 || y0 == y1) return 0;
-    return (x1 - x0) * (y1 - y0);
+    return (x1 - x0) * (y1 - y0) * samplesPerPixel;
 }
 
 

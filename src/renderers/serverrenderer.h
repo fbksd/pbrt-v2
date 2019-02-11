@@ -27,7 +27,7 @@ public:
         const Sample *sample, RNG &rng, MemoryArena &arena) const;
 
     void getSceneInfo(SceneInfo *scene);
-    bool evaluateSamples(int64_t spp, int64_t remainingCount);
+    void evaluateSamples(int64_t spp, int64_t remainingCount, int pipeSize);
 
 private:
     std::vector<Task*> createTasks(Sampler* sppSampler,
@@ -48,6 +48,11 @@ private:
     SampleLayout m_layout;
     int m_width;
     int m_height;
+
+    std::vector<Task*> m_renderTasks;
+    std::unique_ptr<ProgressReporter> m_reporter;
+    std::unique_ptr<Sampler> m_sppSampler;
+    std::unique_ptr<Sampler> m_sparseSampler;
 };
 
 
@@ -58,7 +63,7 @@ public:
     // SamplerRendererTask Public Methods
     ServerRendererTask(const Scene *sc, Renderer *ren, Camera *c,
                         ProgressReporter &pr, Sampler *ms, Sample *sam,
-                        bool visIds, int tn, int tc, size_t pipeOffset = 0, bool seekPipeByPixel = true)
+                        bool visIds, int tn, int tc, bool seekPipeByPixel = true)
       : reporter(pr)
     {
         scene = sc; renderer = ren; camera = c; mainSampler = ms;
@@ -68,7 +73,6 @@ public:
 #else
         seed = taskNum;
 #endif
-        m_pipeOffset = pipeOffset;
         m_seekPipeByPixel = seekPipeByPixel;
     }
     void Run();
@@ -82,7 +86,6 @@ private:
     bool visualizeObjectIds;
     int taskNum, taskCount;
     int seed;
-    size_t m_pipeOffset;
     bool m_seekPipeByPixel;
 };
 
