@@ -371,12 +371,12 @@ Spectrum MetropolisRenderer::Lpath(const Scene *scene,
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
             
-            Spectrum directL;
+            Spectrum directL, diffuse;
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
                                 ls.lightSample, ls.bsdfSample,
-                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL) / lightPdf;
+                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL, diffuse, 0.5) / lightPdf;
             PBRT_MLT_FINISHED_ESTIMATE_DIRECT();
         }
         previousSpecular = vc.specularBounce;
@@ -433,12 +433,12 @@ Spectrum MetropolisRenderer::Lbidir(const Scene *scene,
             const Light *light = scene->lights[lightNum];
             PBRT_MLT_STARTED_ESTIMATE_DIRECT();
             
-            Spectrum directL;
+            Spectrum directL, diffuse;
             Ld = vc.alpha *
                  EstimateDirect(scene, this, arena, light, pc, nc, vc.wPrev,
                                 vc.isect.rayEpsilon, time, vc.bsdf, rng,
                                 ls.lightSample, ls.bsdfSample,
-                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL) / lightPdf;
+                                BxDFType(BSDF_ALL & ~BSDF_SPECULAR), directL, diffuse, 0.5f) / lightPdf;
             PBRT_MLT_FINISHED_ESTIMATE_DIRECT();
         }
         previousSpecular = vc.specularBounce;
@@ -786,7 +786,7 @@ void MLTTask::Run() {
 
 Spectrum MetropolisRenderer::Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,
-        Spectrum *T, SampleBuffer* sampleBuffer) const {
+        Spectrum *T, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Intersection localIsect;
     if (!isect) isect = &localIsect;
     Spectrum Lo = 0.f;

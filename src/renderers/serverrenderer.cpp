@@ -130,6 +130,7 @@ void ServerRendererTask::Run() {
     RayDifferential *rays = new RayDifferential[maxSamples];
     Spectrum *Ls = new Spectrum[maxSamples];
     Spectrum *Ts = new Spectrum[maxSamples];
+    Spectrum *diffuse = new Spectrum[maxSamples];
     Intersection *isects = new Intersection[maxSamples];
 
     // Get samples from _Sampler_ and update image
@@ -176,12 +177,16 @@ void ServerRendererTask::Run() {
                     Ls[i] = 0.f;
             }
             else {
-            if (rayWeight > 0.f)
+            if (rayWeight > 0.f) {
+                Spectrum diffComp = 0.f;
                 Ls[i] = rayWeight * renderer->Li(scene, rays[i], &samples[i], rng,
-                                                 arena, &isects[i], &Ts[i], &sampleBuffer);
+                                                 arena, &isects[i], &Ts[i], &sampleBuffer, &diffComp, m_roughnessThr);
+                diffuse[i] = rayWeight * diffComp;
+            }
             else {
                 Ls[i] = 0.f;
                 Ts[i] = 1.f;
+                diffuse[i] = 0.f;
             }
 
             // Issue warning if unexpected radiance value returned
@@ -211,6 +216,11 @@ void ServerRendererTask::Run() {
                 sampleBuffer.set(DEPTH, rays[i].maxt);
             else
                 sampleBuffer.set(DEPTH, 0.f);
+            rgb[0] = rgb[1] = rgb[2] = 0.f;
+            diffuse[i].ToRGB(rgb);
+            sampleBuffer.set(DIFFUSE_COLOR_R, rgb[0]);
+            sampleBuffer.set(DIFFUSE_COLOR_G, rgb[1]);
+            sampleBuffer.set(DIFFUSE_COLOR_B, rgb[2]);
             pipe << sampleBuffer;
 
             if(++s == sampler->samplesPerPixel)
@@ -230,6 +240,7 @@ void ServerRendererTask::Run() {
     delete[] Ls;
     delete[] Ts;
     delete[] isects;
+    delete[] diffuse;
     reporter.Update();
     PBRT_FINISHED_RENDERTASK(taskNum);
 }
@@ -303,8 +314,9 @@ void ServerRenderer::Render(const Scene *scene) {
 
 
 Spectrum ServerRenderer::Li(const Scene *scene,
-        const RayDifferential &ray, const Sample *sample, RNG &rng,
-        MemoryArena &arena, Intersection *isect, Spectrum *T, SampleBuffer* sampleBuffer) const {
+                            const RayDifferential &ray, const Sample *sample, RNG &rng,
+                            MemoryArena &arena, Intersection *isect, Spectrum *T,
+                            SampleBuffer* sampleBuffer, Spectrum* diffuse, float roughnessThr) const {
     Assert(ray.time == sample->time);
     Assert(!ray.HasNaNs());
     // Allocate local variables for _isect_ and _T_ if needed
@@ -313,9 +325,10 @@ Spectrum ServerRenderer::Li(const Scene *scene,
     Intersection localIsect;
     if (!isect) isect = &localIsect;
     Spectrum Li = 0.f;
+    Spectrum diffuseComp = 0.f;
     if (scene->Intersect(ray, isect))
         Li = m_surfaceIntegrator->Li(scene, this, ray, *isect, sample,
-                                   rng, arena, sampleBuffer);
+                                   rng, arena, sampleBuffer, &diffuseComp, roughnessThr);
     else {
         // Handle ray that doesn't intersect any geometry
         for (uint32_t i = 0; i < scene->lights.size(); ++i)
@@ -323,6 +336,7 @@ Spectrum ServerRenderer::Li(const Scene *scene,
     }
     Spectrum Lvi = m_volumeIntegrator->Li(scene, this, ray, m_sample, rng,
                                         T, arena);
+    *diffuse = *T * diffuseComp + Lvi;
     return *T * Li + Lvi;
 }
 
@@ -420,7 +434,7 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                 renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                              reporter, sppSampler, m_sample,
                                                              m_visualizeObjectIds,
-                                                             nSppTasks-1-i, nSppTasks, false));
+                                                             nSppTasks-1-i, nSppTasks, false, m_layout.getRoughnessThreshold()));
         }
         else
         {
@@ -428,7 +442,7 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
                 renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                              reporter, sppSampler, m_sample,
                                                              m_visualizeObjectIds,
-                                                             nSppTasks-1-i, nSppTasks, true));
+                                                             nSppTasks-1-i, nSppTasks, true, m_layout.getRoughnessThreshold()));
         }
     }
 
@@ -439,7 +453,7 @@ std::vector<Task*> ServerRenderer::createTasks(Sampler* sppSampler,
             renderTasks.push_back(new ServerRendererTask(m_scene, this, m_camera,
                                                          reporter, sparseSampler, m_sample,
                                                          m_visualizeObjectIds,
-                                                         nSparseTasks-1-i, nSparseTasks, false));
+                                                         nSparseTasks-1-i, nSparseTasks, false, m_layout.getRoughnessThreshold()));
         }
     }
 

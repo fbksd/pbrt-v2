@@ -224,7 +224,7 @@ void SamplerRenderer::Render(const Scene *scene) {
 
 Spectrum SamplerRenderer::Li(const Scene *scene,
         const RayDifferential &ray, const Sample *sample, RNG &rng,
-        MemoryArena &arena, Intersection *isect, Spectrum *T, SampleBuffer* sampleBuffer) const {
+        MemoryArena &arena, Intersection *isect, Spectrum *T, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Assert(ray.time == sample->time);
     Assert(!ray.HasNaNs());
     // Allocate local variables for _isect_ and _T_ if needed

@@ -99,7 +99,7 @@ CreateRadianceProbes::~CreateRadianceProbes() {
 
 Spectrum CreateRadianceProbes::Li(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena, Intersection *isect,
-        Spectrum *T, SampleBuffer* sampleBuffer) const {
+        Spectrum *T, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Assert(ray.time == sample->time);
     Spectrum localT;
     if (!T) T = &localT;

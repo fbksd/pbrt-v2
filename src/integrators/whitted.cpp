@@ -41,7 +41,7 @@
 Spectrum WhittedIntegrator::Li(const Scene *scene,
         const Renderer *renderer, const RayDifferential &ray,
         const Intersection &isect, const Sample *sample, RNG &rng,
-        MemoryArena &arena, SampleBuffer* sampleBuffer) const {
+        MemoryArena &arena, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Spectrum L(0.);
     // Compute emitted and reflected light at ray intersection point
 
@@ -99,9 +99,9 @@ Spectrum WhittedIntegrator::Li(const Scene *scene,
     if (ray.depth + 1 < maxDepth) {
         // Trace rays for specular reflection and refraction
         L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample,
-                             arena);
+                             arena, *diffuse, roughnessThr);
         L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample,
-                              arena);
+                              arena, *diffuse, roughnessThr);
     }
     return L;
 }

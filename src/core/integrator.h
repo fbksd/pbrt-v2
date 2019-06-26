@@ -66,8 +66,11 @@ class SurfaceIntegrator : public Integrator {
 public:
     // SurfaceIntegrator Interface
     virtual Spectrum Li(const Scene *scene, const Renderer *renderer,
-        const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer = nullptr) const = 0;
+                        const RayDifferential &ray, const Intersection &isect,
+                        const Sample *sample, RNG &rng, MemoryArena &arena,
+                        SampleBuffer* sampleBuffer = nullptr,
+                        Spectrum* diffuse = nullptr,
+                        float roughnessThr = 0.5f) const = 0;
 };
 
 
@@ -75,24 +78,26 @@ Spectrum UniformSampleAllLights(const Scene *scene, const Renderer *renderer,
     MemoryArena &arena, const Point &p, const Normal &n, const Vector &wo,
     float rayEpsilon, float time, BSDF *bsdf, const Sample *sample, RNG &rng,
     Spectrum& directL, const LightSampleOffsets *lightSampleOffsets,
-    const BSDFSampleOffsets *bsdfSampleOffsets);
+    const BSDFSampleOffsets *bsdfSampleOffsets, Spectrum* diffuse = nullptr, float roughnessTrh = 0.5f);
 Spectrum UniformSampleOneLight(const Scene *scene, const Renderer *renderer,
     MemoryArena &arena, const Point &p, const Normal &n, const Vector &wo,
     float rayEpsilon, float time, BSDF *bsdf,
     const Sample *sample, RNG &rng, Spectrum& directL, int lightNumOffset = -1,
     const LightSampleOffsets *lightSampleOffset = NULL,
-    const BSDFSampleOffsets *bsdfSampleOffset = NULL);
+    const BSDFSampleOffsets *bsdfSampleOffset = NULL,
+    Spectrum* diffuse = nullptr,
+    float roughnessThr = 0.5f);
 Spectrum EstimateDirect(const Scene *scene, const Renderer *renderer,
     MemoryArena &arena, const Light *light, const Point &p,
     const Normal &n, const Vector &wo, float rayEpsilon, float time, const BSDF *bsdf,
     RNG &rng, const LightSample &lightSample, const BSDFSample &bsdfSample,
-    BxDFType flags, Spectrum& directL);
+    BxDFType flags, Spectrum& directL, Spectrum& diffuse, float roughnessThr);
 Spectrum SpecularReflect(const RayDifferential &ray, BSDF *bsdf, RNG &rng,
     const Intersection &isect, const Renderer *renderer, const Scene *scene,
-    const Sample *sample, MemoryArena &arena);
+    const Sample *sample, MemoryArena &arena, Spectrum &diffuse, float roughnessThr);
 Spectrum SpecularTransmit(const RayDifferential &ray, BSDF *bsdf, RNG &rng,
     const Intersection &isect, const Renderer *renderer, const Scene *scene,
-    const Sample *sample, MemoryArena &arena);
+    const Sample *sample, MemoryArena &arena, Spectrum &diffuse, float roughnessThr);
 Distribution1D *ComputeLightSamplingCDF(const Scene *scene);
 
 #endif // PBRT_CORE_INTEGRATOR_H

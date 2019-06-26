@@ -45,8 +45,11 @@ class AmbientOcclusionIntegrator : public SurfaceIntegrator {
 public:
     AmbientOcclusionIntegrator(int ns, float md) { nSamples = RoundUpPow2(ns); maxDist = md; }
     Spectrum Li(const Scene *scene, const Renderer *renderer,
-        const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer = nullptr) const;
+                const RayDifferential &ray, const Intersection &isect,
+                const Sample *sample, RNG &rng, MemoryArena &arena,
+                SampleBuffer* sampleBuffer = nullptr,
+                Spectrum* diffuse = nullptr,
+                float roughnessThr = 0.5f) const;
 private:
     int nSamples;
     float maxDist;

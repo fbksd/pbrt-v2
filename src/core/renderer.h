@@ -48,8 +48,11 @@ public:
     virtual ~Renderer();
     virtual void Render(const Scene *scene) = 0;
     virtual Spectrum Li(const Scene *scene, const RayDifferential &ray,
-        const Sample *sample, RNG &rng, MemoryArena &arena,
-        Intersection *isect = NULL, Spectrum *T = NULL, SampleBuffer* sampleBuffer = nullptr) const = 0;
+                        const Sample *sample, RNG &rng, MemoryArena &arena,
+                        Intersection *isect = NULL, Spectrum *T = NULL,
+                        SampleBuffer* sampleBuffer = nullptr,
+                        Spectrum* diffuse = nullptr,
+                        float roughnessThr = 0.5f) const = 0;
     virtual Spectrum Transmittance(const Scene *scene,
         const RayDifferential &ray, const Sample *sample,
         RNG &rng, MemoryArena &arena) const = 0;

@@ -46,8 +46,11 @@ class WhittedIntegrator : public SurfaceIntegrator {
 public:
     // WhittedIntegrator Public Methods
     Spectrum Li(const Scene *scene, const Renderer *renderer,
-        const RayDifferential &ray, const Intersection &isect, const Sample *sample,
-        RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer = nullptr) const;
+                const RayDifferential &ray, const Intersection &isect, const Sample *sample,
+                RNG &rng, MemoryArena &arena,
+                SampleBuffer* sampleBuffer = nullptr,
+                Spectrum* diffuse = nullptr,
+                float roughnessThr = 0.5f) const;
     WhittedIntegrator(int md) {
         maxDepth = md;
     }

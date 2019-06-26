@@ -21,8 +21,11 @@ public:
     ~ServerRenderer();
     void Render(const Scene *scene);
     Spectrum Li(const Scene *scene, const RayDifferential &ray,
-        const Sample *sample, RNG &rng, MemoryArena &arena,
-        Intersection *isect = NULL, Spectrum *T = NULL, SampleBuffer* sampleBuffer = nullptr) const;
+                const Sample *sample, RNG &rng, MemoryArena &arena,
+                Intersection *isect = NULL, Spectrum *T = NULL,
+                SampleBuffer* sampleBuffer = nullptr,
+                Spectrum* diffuse = nullptr,
+                float roughnessThr = 0.5f) const;
     Spectrum Transmittance(const Scene *scene, const RayDifferential &ray,
         const Sample *sample, RNG &rng, MemoryArena &arena) const;
 
@@ -63,7 +66,7 @@ public:
     // SamplerRendererTask Public Methods
     ServerRendererTask(const Scene *sc, Renderer *ren, Camera *c,
                         ProgressReporter &pr, Sampler *ms, Sample *sam,
-                        bool visIds, int tn, int tc, bool seekPipeByPixel = true)
+                        bool visIds, int tn, int tc, bool seekPipeByPixel = true, float roughnessThr = 0.5)
       : reporter(pr)
     {
         scene = sc; renderer = ren; camera = c; mainSampler = ms;
@@ -74,6 +77,7 @@ public:
         seed = taskNum;
 #endif
         m_seekPipeByPixel = seekPipeByPixel;
+        m_roughnessThr = roughnessThr;
     }
     void Run();
 private:
@@ -87,6 +91,7 @@ private:
     int taskNum, taskCount;
     int seed;
     bool m_seekPipeByPixel;
+    float m_roughnessThr;
 };
 
 

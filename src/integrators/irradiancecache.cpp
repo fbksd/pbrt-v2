@@ -196,7 +196,7 @@ void IrradiancePrimeTask::Run() {
 
 Spectrum IrradianceCacheIntegrator::Li(const Scene *scene,
         const Renderer *renderer, const RayDifferential &ray, const Intersection &isect,
-        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
+        const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Spectrum L(0.);
     // Evaluate BSDF at hit point
     BSDF *bsdf = isect.GetBSDF(ray, arena);
@@ -215,9 +215,9 @@ Spectrum IrradianceCacheIntegrator::Li(const Scene *scene,
         Vector wi;
         // Trace rays for specular reflection and refraction
         L += SpecularReflect(ray, bsdf, rng, isect, renderer, scene, sample,
-                             arena);
+                             arena, *diffuse, roughnessThr);
         L += SpecularTransmit(ray, bsdf, rng, isect, renderer, scene, sample,
-                              arena);
+                              arena, *diffuse, roughnessThr);
     }
 
     // Estimate indirect lighting with irradiance cache

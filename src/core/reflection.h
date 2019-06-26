@@ -155,7 +155,8 @@ public:
     // BSDF Public Methods
     Spectrum Sample_f(const Vector &wo, Vector *wi, const BSDFSample &bsdfSample,
                       float *pdf, BxDFType flags = BSDF_ALL,
-                      BxDFType *sampledType = NULL) const;
+                      BxDFType *sampledType = NULL,
+                      float *sampledRoughness = nullptr) const;
     float Pdf(const Vector &wo, const Vector &wi,
               BxDFType flags = BSDF_ALL) const;
     BSDF(const DifferentialGeometry &dgs, const Normal &ngeom,
@@ -181,6 +182,8 @@ public:
     { return nn; }
 
     Spectrum getTextureColor();
+
+    float getRoughness(BxDFType flags = BSDF_ALL) const;
 
     // BSDF Public Data
     const DifferentialGeometry dgShading;
@@ -221,6 +224,8 @@ public:
 
     virtual Spectrum getTextureColor() = 0;
 
+    virtual float getRoughness() const = 0;
+
     // BxDF Public Data
     const BxDFType type;
 };
@@ -250,6 +255,9 @@ public:
     Spectrum getTextureColor()
     { return brdf->getTextureColor(); }
 
+    float getRoughness() const
+    { return brdf->getRoughness(); }
+
 private:
     BxDF *brdf;
 };
@@ -274,6 +282,9 @@ public:
 
     Spectrum getTextureColor()
     { return s*bxdf->getTextureColor(); }
+
+    float getRoughness() const
+    { return bxdf->getRoughness(); }
 
 private:
     BxDF *bxdf;
@@ -337,6 +348,9 @@ public:
     Spectrum getTextureColor()
     { return Spectrum(); }
 
+    float getRoughness() const
+    { return 0.f; }
+
 private:
     // SpecularReflection Private Data
     Spectrum R;
@@ -365,6 +379,9 @@ public:
     Spectrum getTextureColor()
     { return Spectrum(); }
 
+    float getRoughness() const
+    { return 0.f; }
+
 private:
     // SpecularTransmission Private Data
     Spectrum T;
@@ -384,6 +401,9 @@ public:
 
     Spectrum getTextureColor()
     { return R; }
+
+    float getRoughness() const
+    { return std::numeric_limits<float>::infinity(); }
 
 private:
     // Lambertian Private Data
@@ -407,6 +427,9 @@ public:
     Spectrum getTextureColor()
     { return R; }
 
+    float getRoughness() const
+    { return std::numeric_limits<float>::infinity(); }
+
 private:
     // OrenNayar Private Data
     Spectrum R;
@@ -422,6 +445,7 @@ public:
     virtual void Sample_f(const Vector &wo, Vector *wi,
                           float u1, float u2, float *pdf) const = 0;
     virtual float Pdf(const Vector &wo, const Vector &wi) const = 0;
+    virtual float getRoughness() const = 0;
 };
 
 
@@ -446,6 +470,9 @@ public:
     Spectrum getTextureColor()
     { return R; }
 
+    float getRoughness() const
+    { return distribution->getRoughness(); }
+
 private:
     // Microfacet Private Data
     Spectrum R;
@@ -465,6 +492,9 @@ public:
     }
     virtual void Sample_f(const Vector &wi, Vector *sampled_f, float u1, float u2, float *pdf) const;
     virtual float Pdf(const Vector &wi, const Vector &wo) const;
+    float getRoughness() const
+    { return std::sqrt(2.f / (2.f + exponent)); }
+
 private:
     float exponent;
 };
@@ -488,6 +518,8 @@ public:
     void Sample_f(const Vector &wo, Vector *wi, float u1, float u2, float *pdf) const;
     float Pdf(const Vector &wo, const Vector &wi) const;
     void sampleFirstQuadrant(float u1, float u2, float *phi, float *costheta) const;
+    float getRoughness() const
+    { return (ex + ey) * 0.5f; }
 private:
     float ex, ey;
 };
@@ -509,6 +541,9 @@ public:
     Spectrum getTextureColor()
     { return Rd; }
 
+    float getRoughness() const
+    { return distribution->getRoughness(); }
+
 private:
     // FresnelBlend Private Data
     Spectrum Rd, Rs;
@@ -525,6 +560,9 @@ public:
 
     Spectrum getTextureColor()
     { return Spectrum(); }
+
+    float getRoughness() const
+    { return std::numeric_limits<float>::infinity(); }
 
 private:
     // IrregIsotropicBRDF Private Data
@@ -543,6 +581,9 @@ public:
 
     Spectrum getTextureColor()
     { return Spectrum(); }
+
+    float getRoughness() const
+    { return std::numeric_limits<float>::infinity(); }
 
 private:
     // RegularHalfangleBRDF Private Data

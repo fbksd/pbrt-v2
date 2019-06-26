@@ -113,7 +113,7 @@ void UseRadianceProbes::RequestSamples(Sampler *sampler, Sample *sample, const S
 
 Spectrum UseRadianceProbes::Li(const Scene *scene, const Renderer *renderer,
             const RayDifferential &ray, const Intersection &isect,
-            const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer) const {
+            const Sample *sample, RNG &rng, MemoryArena &arena, SampleBuffer* sampleBuffer, Spectrum *diffuse, float roughnessThr) const {
     Spectrum L(0.);
     Vector wo = -ray.d;
     // Compute emitted light if ray hit an area light source

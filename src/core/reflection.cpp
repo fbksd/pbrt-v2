@@ -521,7 +521,8 @@ BSDFSample::BSDFSample(const Sample *sample,
 
 Spectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
                         const BSDFSample &bsdfSample, float *pdf,
-                        BxDFType flags, BxDFType *sampledType) const {
+                        BxDFType flags, BxDFType *sampledType,
+                        float *sampledRoughness) const {
     PBRT_STARTED_BSDF_SAMPLE();
     // Choose which _BxDF_ to sample
     int matchingComps = NumComponents(flags);
@@ -575,7 +576,9 @@ Spectrum BSDF::Sample_f(const Vector &woW, Vector *wiW,
             if (bxdfs[i]->MatchesFlags(flags))
                 f += bxdfs[i]->f(wo, wi);
     }
-        PBRT_FINISHED_BSDF_SAMPLE();
+    PBRT_FINISHED_BSDF_SAMPLE();
+    if(sampledRoughness)
+        *sampledRoughness = bxdf->getRoughness();
     return f;
 }
 
@@ -660,6 +663,22 @@ Spectrum BSDF::getTextureColor()
         if(bxdfs[i]->type & (BSDF_DIFFUSE | BSDF_GLOSSY))
             tex += bxdfs[i]->getTextureColor();
     return tex;
+}
+
+float BSDF::getRoughness(BxDFType flags) const
+{
+    float a = 0.f;
+    int n = 0;
+    for (int i = 0; i < nBxDFs; ++i)
+        if (bxdfs[i]->MatchesFlags(flags))
+        {
+            a += bxdfs[i]->getRoughness();
+            ++n;
+        }
+
+    if(n != 0)
+        return a/n;
+    return a;
 }
 
 
